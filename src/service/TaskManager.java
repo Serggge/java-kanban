@@ -3,6 +3,7 @@ package service;
 import model.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class TaskManager {
 
@@ -119,8 +120,13 @@ public class TaskManager {
     }
 
     public static void deleteSubtasks() {
+        HashSet<Epic> epicTasks = new HashSet<>();
         for (Subtask subtask : subtaskList.values()) {
+            epicTasks.add(subtask.getParentTask());
             subtask.getParentTask().getSubtaskList().remove(subtask.getTaskID());
+        }
+        for (Epic epicTask : epicTasks) {
+            checkEpicTaskStatus(epicTask);
         }
         subtaskList.clear();
     }
