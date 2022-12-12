@@ -16,10 +16,8 @@ public class Task {
     }
 
     public Task(int taskID, String taskName, String description, TaskStatus taskStatus) {
+        this(taskName, description, taskStatus);
         this.taskID = taskID;
-        this.taskName = taskName;
-        this.description = description;
-        this.taskStatus = taskStatus;
     }
 
     public int getTaskID() {
@@ -56,7 +54,7 @@ public class Task {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + "{" +
+        return getClass().getSimpleName() + "{" +
                 "taskName='" + taskName + '\'' +
                 ", description='" + description + '\'' +
                 ", taskID=" + taskID +

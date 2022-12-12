@@ -1,6 +1,7 @@
 package model;
 
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class Epic extends Task {
 
@@ -10,8 +11,25 @@ public class Epic extends Task {
         super(taskName, description, TaskStatus.NEW);
     }
 
-    public HashMap<Integer, Subtask> getSubtaskList() {
-        return subtaskList;
+    public HashSet<Subtask> getSubtaskList() {
+        return new HashSet<>(subtaskList.values());
+    }
+
+    protected void addSubtaskToList(Subtask subtask) {
+            subtaskList.put(subtask.getTaskID(), subtask);
+    }
+
+    public void removeSubtaskFromList(int taskID) {
+        if (subtaskList.containsKey(taskID)) {
+            subtaskList.remove(taskID);
+        } else {
+            System.out.printf("Не удалось удалить подзадачу с ID=%d. " +
+                    "Указанный ID в списке подзадач не найден\n", taskID);
+        }
+    }
+
+    public HashSet<Integer> getListSubtaskID() {
+        return new HashSet<>(subtaskList.keySet());
     }
 
 }
