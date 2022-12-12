@@ -15,6 +15,10 @@ public class Epic extends Task {
         return new HashSet<>(subtaskList.values());
     }
 
+    public HashSet<Integer> getListSubtaskID() {
+        return new HashSet<>(subtaskList.keySet());
+    }
+
     protected void addSubtaskToList(Subtask subtask) {
             subtaskList.put(subtask.getTaskID(), subtask);
     }
@@ -26,10 +30,6 @@ public class Epic extends Task {
             System.out.printf("Не удалось удалить подзадачу с ID=%d. " +
                     "Указанный ID в списке подзадач не найден\n", taskID);
         }
-    }
-
-    public HashSet<Integer> getListSubtaskID() {
-        return new HashSet<>(subtaskList.keySet());
     }
 
 }
