@@ -19,7 +19,7 @@ public class Epic extends Task {
             subtaskList.put(subtask.getTaskID(), subtask);
     }
 
-    public void removeSubtaskFromList(int taskID) {
+    protected void removeSubtaskFromList(int taskID) {
         if (subtaskList.containsKey(taskID)) {
             subtaskList.remove(taskID);
         } else {
