@@ -1,34 +1,53 @@
 package model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 public class Epic extends Task {
 
-    private final HashMap<Integer, Subtask> subtaskList = new HashMap<>();
+    private final Map<Integer, Subtask> subtaskList = new HashMap<>();
 
-    public Epic(String taskName, String description) {
-        super(taskName, description, TaskStatus.NEW);
+    public Epic(int taskID, String taskName, String description) {
+        super(taskID, taskName, description, TaskStatus.NEW);
     }
 
-    public HashSet<Subtask> getSubtaskList() {
-        return new HashSet<>(subtaskList.values());
+    public List<Task> getSubtaskList() {
+        return new ArrayList<>(subtaskList.values());
     }
 
-    public HashSet<Integer> getListSubtaskID() {
-        return new HashSet<>(subtaskList.keySet());
+    public List<Integer> getListSubtaskID() {
+        return new ArrayList<>(subtaskList.keySet());
+    }
+
+    public void printSubtaskList() {
+        subtaskList.values().forEach(System.out::println);
     }
 
     protected void addSubtaskToList(Subtask subtask) {
-            subtaskList.put(subtask.getTaskID(), subtask);
+        subtaskList.put(subtask.getTaskID(), subtask);
+        changeStatus();
     }
 
-    protected void removeSubtaskFromList(int taskID) {
-        if (subtaskList.containsKey(taskID)) {
-            subtaskList.remove(taskID);
-        } else {
-            System.out.printf("Не удалось удалить подзадачу с ID=%d. " +
-                    "Указанный ID в списке подзадач не найден\n", taskID);
+    private void changeStatus() {
+        boolean isFirstTask = true;
+        TaskStatus firstSubtaskStatus = null;
+        for (Subtask subtask : subtaskList.values()) {
+            if (subtask.getTaskStatus() == TaskStatus.IN_PROGRESS) {
+                taskStatus = TaskStatus.IN_PROGRESS;
+                return;
+            }
+            if (isFirstTask) {
+                firstSubtaskStatus = subtask.getTaskStatus();
+                isFirstTask = false;
+                continue;
+            }
+            if (subtask.getTaskStatus() != firstSubtaskStatus) {
+                taskStatus = TaskStatus.IN_PROGRESS;
+                return;
+            }
+            taskStatus = firstSubtaskStatus;
         }
     }
 

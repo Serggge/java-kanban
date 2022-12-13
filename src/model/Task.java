@@ -9,15 +9,11 @@ public class Task {
     protected int taskID;
     protected TaskStatus taskStatus;
 
-    public Task(String taskName, String description, TaskStatus taskStatus) {
+    public Task(int taskID, String taskName, String description, TaskStatus taskStatus) {
+        this.taskID = taskID;
         this.taskName = taskName;
         this.description = description;
         this.taskStatus = taskStatus;
-    }
-
-    public Task(int taskID, String taskName, String description, TaskStatus taskStatus) {
-        this(taskName, description, taskStatus);
-        this.taskID = taskID;
     }
 
     public int getTaskID() {
