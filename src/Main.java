@@ -14,12 +14,9 @@ public class Main {
                 "Пройти курсы по разработке на Java", TaskStatus.NEW);
         Subtask findJob = new Subtask(taskManager.getNextID(), becomeDeveloper,
                 "Найти работу по специальности","Специальность Java developer", TaskStatus.NEW);
-        taskManager.addToList(studyJava);
-        taskManager.addToList(findJob);
 
         studyJava = new Subtask(studyJava.getTaskID(), becomeDeveloper, "Освоить технологию Java",
                 "Пройти курсы по разработке на Java", TaskStatus.IN_PROGRESS);
-        taskManager.addToList(studyJava);
         System.out.println("--------------------------------------");
         studyJava = new Subtask(studyJava.getTaskID(), becomeDeveloper, "Освоить технологию Java",
                 "Пройти курсы по разработке на Java", TaskStatus.DONE);
@@ -34,7 +31,6 @@ public class Main {
         epicList.forEach(System.out::println);
         subtaskList.forEach(System.out::println);
         System.out.println("--------------------------------");
-
     }
 
 }

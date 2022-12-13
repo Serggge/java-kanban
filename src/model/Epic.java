@@ -21,34 +21,44 @@ public class Epic extends Task {
         return new ArrayList<>(subtaskList.keySet());
     }
 
+    public Task getSubtask(int subtaskID) {
+        return subtaskList.get(subtaskID);
+    }
+
     public void printSubtaskList() {
         subtaskList.values().forEach(System.out::println);
     }
 
     protected void addSubtaskToList(Subtask subtask) {
+        if (subtask.getTaskStatus() == TaskStatus.IN_PROGRESS) {
+            taskStatus = TaskStatus.IN_PROGRESS;
+        }
         subtaskList.put(subtask.getTaskID(), subtask);
-        changeStatus();
     }
 
-    private void changeStatus() {
-        boolean isFirstTask = true;
-        TaskStatus firstSubtaskStatus = null;
-        for (Subtask subtask : subtaskList.values()) {
-            if (subtask.getTaskStatus() == TaskStatus.IN_PROGRESS) {
-                taskStatus = TaskStatus.IN_PROGRESS;
-                return;
-            }
-            if (isFirstTask) {
-                firstSubtaskStatus = subtask.getTaskStatus();
-                isFirstTask = false;
-                continue;
-            }
-            if (subtask.getTaskStatus() != firstSubtaskStatus) {
-                taskStatus = TaskStatus.IN_PROGRESS;
-                return;
-            }
-            taskStatus = firstSubtaskStatus;
+    public void removeSubtasks() {
+        subtaskList.clear();
+        taskStatus = TaskStatus.NEW;
+    }
+
+    public void removeSubtaskByID(int taskID) {
+        subtaskList.remove(taskID);
+        if (subtaskList.isEmpty()) {
+            taskStatus = TaskStatus.NEW;
+        } else {
+            changeStatus();
         }
+    }
+
+    protected void changeStatus() {
+        boolean isEpicDone = true;
+        for (Subtask subtask : subtaskList.values()) {
+            if (subtask.getTaskStatus() != TaskStatus.DONE) {
+                isEpicDone = false;
+                break;
+            }
+        }
+        taskStatus = isEpicDone ? TaskStatus.DONE : TaskStatus.IN_PROGRESS;
     }
 
 }
