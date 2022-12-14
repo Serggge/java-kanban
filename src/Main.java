@@ -22,6 +22,9 @@ public class Main {
                 "Пройти курсы по разработке на Java", TaskStatus.DONE);
         findJob = new Subtask(findJob.getTaskID(), becomeDeveloper, "Найти работу по специальности",
                 "Специальность Java developer", TaskStatus.DONE);
+        studyJava.setStatus(TaskStatus.IN_PROGRESS);
+        studyJava.setStatus(TaskStatus.NEW);
+        findJob.setStatus(TaskStatus.NEW);
 
         System.out.println("Получим списки всех типов задач:");
         List<Task> taskList = taskManager.getTaskList();

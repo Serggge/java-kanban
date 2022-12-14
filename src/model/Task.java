@@ -20,18 +20,12 @@ public class Task {
         return taskID;
     }
 
-    public void setTaskID(int taskID) {
-        this.taskID = taskID;
-    }
-
     public TaskStatus getTaskStatus() {
         return taskStatus;
     }
 
-    public void setTaskStatus(TaskStatus taskStatus) {
-        if (this.getClass() == Epic.class) {
-            this.taskStatus = taskStatus;
-        }
+    public void setStatus(TaskStatus taskStatus) {
+        this.taskStatus = taskStatus;
     }
 
     @Override

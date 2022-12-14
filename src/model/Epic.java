@@ -29,13 +29,6 @@ public class Epic extends Task {
         subtaskList.values().forEach(System.out::println);
     }
 
-    protected void addSubtaskToList(Subtask subtask) {
-        if (subtask.getTaskStatus() == TaskStatus.IN_PROGRESS) {
-            taskStatus = TaskStatus.IN_PROGRESS;
-        }
-        subtaskList.put(subtask.getTaskID(), subtask);
-    }
-
     public void removeSubtasks() {
         subtaskList.clear();
         taskStatus = TaskStatus.NEW;
@@ -50,15 +43,34 @@ public class Epic extends Task {
         }
     }
 
+    @Override
+    public void setStatus(TaskStatus taskStatus) {
+        changeStatus();
+    }
+
+    protected void addSubtaskToList(Subtask subtask) {
+        subtaskList.put(subtask.getTaskID(), subtask);
+    }
+
     protected void changeStatus() {
-        boolean isEpicDone = true;
+        boolean isFirstTask = true;
+        TaskStatus firstSubtaskStatus = null;
         for (Subtask subtask : subtaskList.values()) {
-            if (subtask.getTaskStatus() != TaskStatus.DONE) {
-                isEpicDone = false;
-                break;
+            if (subtask.getTaskStatus() == TaskStatus.IN_PROGRESS) {
+                taskStatus = TaskStatus.IN_PROGRESS;
+                return;
             }
+            if (isFirstTask) {
+                firstSubtaskStatus = subtask.getTaskStatus();
+                isFirstTask = false;
+                continue;
+            }
+            if (subtask.getTaskStatus() != firstSubtaskStatus) {
+                taskStatus = TaskStatus.IN_PROGRESS;
+                return;
+            }
+            taskStatus = firstSubtaskStatus;
         }
-        taskStatus = isEpicDone ? TaskStatus.DONE : TaskStatus.IN_PROGRESS;
     }
 
 }

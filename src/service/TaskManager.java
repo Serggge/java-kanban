@@ -41,16 +41,6 @@ public class TaskManager {
         return subtaskList;
     }
 
-    private List<Task> getListByClass(Class<? extends Task> clazz) {
-        List<Task> typedList = new ArrayList<>();
-        for (Task task : taskList.values()) {
-            if (task.getClass() == clazz) {
-                typedList.add(task);
-            }
-        }
-        return typedList;
-    }
-
     public Task getTaskByID(int taskID) {
         Task result = null;
         if (taskList.containsKey(taskID)) {
@@ -70,6 +60,7 @@ public class TaskManager {
         if (taskList.containsKey(taskID)) {
             taskList.remove(taskID);
             System.out.printf("Задача с ID=%d удалена.\n", taskID);
+            return;
         } else {
             for (Task task : getEpicTaskList()) {
                 Epic epicTask = (Epic) task;
@@ -98,14 +89,6 @@ public class TaskManager {
         }
     }
 
-    private void deleteTasksByClass(Class<? extends Task> clazz) {
-        for (Task task : taskList.values()) {
-            if (task.getClass() == clazz) {
-                taskList.remove(task.getTaskID());
-            }
-        }
-    }
-
     public void printTaskList() {
         printTasksByClass(Task.class);
     }
@@ -114,18 +97,36 @@ public class TaskManager {
         printTasksByClass(Epic.class);
     }
 
+    public void printSubtaskList() {
+        for (Task task : getEpicTaskList()) {
+            Epic epicTask = (Epic) task;
+            epicTask.printSubtaskList();
+        }
+    }
+
+    private List<Task> getListByClass(Class<? extends Task> clazz) {
+        List<Task> typedList = new ArrayList<>();
+        for (Task task : taskList.values()) {
+            if (task.getClass() == clazz) {
+                typedList.add(task);
+            }
+        }
+        return typedList;
+    }
+
+    private void deleteTasksByClass(Class<? extends Task> clazz) {
+        for (Task task : taskList.values()) {
+            if (task.getClass() == clazz) {
+                taskList.remove(task.getTaskID());
+            }
+        }
+    }
+
     private void printTasksByClass(Class<? extends Task> clazz) {
         for (Task task : taskList.values()) {
             if (task.getClass() == clazz) {
                 System.out.println(task);
             }
-        }
-    }
-
-    public void printSubtaskList() {
-        for (Task task : getEpicTaskList()) {
-            Epic epicTask = (Epic) task;
-            epicTask.printSubtaskList();
         }
     }
 
