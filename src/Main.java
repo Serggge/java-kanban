@@ -1,12 +1,15 @@
 import model.*;
+import service.InMemoryTaskManager;
+import service.Managers;
 import service.TaskManager;
-import java.util.List;
 
 public class Main {
 
     public static void main(String[] args) {
-        TaskManager taskManager = new TaskManager();
-        System.out.println("Создали новый Эпик и две подзадачи.");
+        InMemoryTaskManager inMemoryTaskManager = new InMemoryTaskManager();
+        Managers<TaskManager> manager = new Managers<>(inMemoryTaskManager);
+        TaskManager taskManager = manager.getDefault();
+
         Epic becomeDeveloper = new Epic(taskManager.getNextID(), "Стать разработчиком",
                 "Освоить технологию Java и устроиться на работу по специальности");
         taskManager.addToList(becomeDeveloper);
@@ -15,25 +18,15 @@ public class Main {
         Subtask findJob = new Subtask(taskManager.getNextID(), becomeDeveloper,
                 "Найти работу по специальности","Специальность Java developer", TaskStatus.NEW);
 
-        studyJava = new Subtask(studyJava.getTaskID(), becomeDeveloper, "Освоить технологию Java",
-                "Пройти курсы по разработке на Java", TaskStatus.IN_PROGRESS);
-        System.out.println("--------------------------------------");
-        studyJava = new Subtask(studyJava.getTaskID(), becomeDeveloper, "Освоить технологию Java",
-                "Пройти курсы по разработке на Java", TaskStatus.DONE);
-        findJob = new Subtask(findJob.getTaskID(), becomeDeveloper, "Найти работу по специальности",
-                "Специальность Java developer", TaskStatus.DONE);
-        studyJava.setStatus(TaskStatus.IN_PROGRESS);
-        studyJava.setStatus(TaskStatus.NEW);
-        findJob.setStatus(TaskStatus.NEW);
-
-        System.out.println("Получим списки всех типов задач:");
-        List<Task> taskList = taskManager.getTaskList();
-        List<Task> epicList = taskManager.getEpicTaskList();
-        List<Task> subtaskList = becomeDeveloper.getSubtaskList();
-        taskList.forEach(System.out::println);
-        epicList.forEach(System.out::println);
-        subtaskList.forEach(System.out::println);
-        System.out.println("--------------------------------");
+        inMemoryTaskManager = (InMemoryTaskManager) taskManager;
+        for (int i = 0; i < 4; i++) {
+            Task task;
+            task = taskManager.getEpic(1);
+            task = taskManager.getSubtask(2);
+            task = taskManager.getSubtask(3);
+            inMemoryTaskManager.printHistory();
+            System.out.println("-------------------------------------------------------------------------------");
+        }
     }
 
 }

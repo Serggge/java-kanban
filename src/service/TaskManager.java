@@ -1,133 +1,34 @@
 package service;
 
-import model.*;
-
-import java.util.ArrayList;
-import java.util.HashMap;
+import model.Task;
 import java.util.List;
-import java.util.Map;
 
-public class TaskManager {
+public interface TaskManager {
 
-    private static int taskID;
-    private final Map<Integer, Task> taskList = new HashMap<>();
+    int getNextID();
 
-    public int getNextID() {
-        return ++taskID;
-    }
+    void addToList(Task task);
 
-    public void addToList(Task task) {
-        if (task.getClass() != Subtask.class) {
-            taskList.put(task.getTaskID(), task);
-        }
-    }
+    Task getTask(int taskID);
 
-    public List<Task> getTaskList() {
-        return getListByClass(Task.class);
-    }
+    Task getEpic(int taskID);
 
-    public List<Task> getEpicTaskList() {
-        return getListByClass(Epic.class);
-    }
+    Task getSubtask(int taskID);
 
-    public List<Task> getSubtaskList() {
-        List<Task> subtaskList = new ArrayList<>();
-        for (Task task : taskList.values()) {
-            if (task.getClass() == Epic.class) {
-                Epic epicTask = (Epic) task;
-                subtaskList.addAll(epicTask.getSubtaskList());
-            }
-        }
-        return subtaskList;
-    }
+    List<Task> getTaskList();
 
-    public Task getTaskByID(int taskID) {
-        Task result = null;
-        if (taskList.containsKey(taskID)) {
-            result = taskList.get(taskID);
-        } else {
-            for (Task task : getEpicTaskList()) {
-                Epic epicTask = (Epic) task;
-                if (epicTask.getListSubtaskID().contains(taskID)) {
-                    return epicTask.getSubtask(taskID);
-                }
-            }
-        }
-        return result;
-    }
+    List<Task> getEpicTaskList();
 
-    public void deleteTaskByID(int taskID) {
-        if (taskList.containsKey(taskID)) {
-            taskList.remove(taskID);
-            System.out.printf("Задача с ID=%d удалена.\n", taskID);
-            return;
-        } else {
-            for (Task task : getEpicTaskList()) {
-                Epic epicTask = (Epic) task;
-                if (epicTask.getListSubtaskID().contains(taskID)) {
-                    epicTask.removeSubtaskByID(taskID);
-                    System.out.printf("Подзадача с ID=%d удалена.\n", taskID);
-                    return;
-                }
-            }
-        }
-        System.out.printf("Задачи с ID=%d нет в списках задач\n", taskID);
-    }
+    List<Task> getSubtaskList();
 
-    public void deleteTasks() {
-        deleteTasksByClass(Task.class);
-    }
+    void deleteTask(int taskID);
 
-    public void deleteEpicTasks() {
-        deleteTasksByClass(Epic.class);
-    }
+    void deleteTasks();
 
-    public void deleteSubtasks() {
-        for (Task task : getEpicTaskList()) {
-            Epic epicTask = (Epic) task;
-            epicTask.removeSubtasks();
-        }
-    }
+    void deleteEpicTasks();
 
-    public void printTaskList() {
-        printTasksByClass(Task.class);
-    }
+    void deleteSubtasks();
 
-    public void printEpicTaskList() {
-        printTasksByClass(Epic.class);
-    }
-
-    public void printSubtaskList() {
-        for (Task task : getEpicTaskList()) {
-            Epic epicTask = (Epic) task;
-            epicTask.printSubtaskList();
-        }
-    }
-
-    private List<Task> getListByClass(Class<? extends Task> clazz) {
-        List<Task> typedList = new ArrayList<>();
-        for (Task task : taskList.values()) {
-            if (task.getClass() == clazz) {
-                typedList.add(task);
-            }
-        }
-        return typedList;
-    }
-
-    private void deleteTasksByClass(Class<? extends Task> clazz) {
-        for (Task task : taskList.values()) {
-            if (task.getClass() == clazz) {
-                taskList.remove(task.getTaskID());
-            }
-        }
-    }
-
-    private void printTasksByClass(Class<? extends Task> clazz) {
-        for (Task task : taskList.values()) {
-            if (task.getClass() == clazz) {
-                System.out.println(task);
-            }
-        }
-    }
+    void deleteAllTasks();
 
 }
