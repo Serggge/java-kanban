@@ -9,15 +9,20 @@ public class Task {
     protected int taskID;
     protected TaskStatus taskStatus;
 
-    public Task(int taskID, String taskName, String description, TaskStatus taskStatus) {
-        this.taskID = taskID;
+    public Task(String taskName, String description) {
         this.taskName = taskName;
         this.description = description;
-        this.taskStatus = taskStatus;
+        this.taskStatus = TaskStatus.NEW;
     }
 
     public int getTaskID() {
         return taskID;
+    }
+
+    public void setTaskID(int taskID) {
+        if (this.taskID == 0 && taskID > 0) {
+            this.taskID = taskID;
+        }
     }
 
     public TaskStatus getTaskStatus() {

@@ -9,8 +9,8 @@ public class Epic extends Task {
 
     private final Map<Integer, Subtask> subtaskList = new HashMap<>();
 
-    public Epic(int taskID, String taskName, String description) {
-        super(taskID, taskName, description, TaskStatus.NEW);
+    public Epic(String taskName, String description) {
+        super(taskName, description);
     }
 
     public List<Task> getSubtaskList() {
@@ -24,7 +24,7 @@ public class Epic extends Task {
     public Task getSubtask(int subtaskID) {
         return subtaskList.get(subtaskID);
     }
-
+    
     public void printSubtaskList() {
         subtaskList.values().forEach(System.out::println);
     }

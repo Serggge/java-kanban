@@ -13,12 +13,10 @@ public class InMemoryTaskManager implements TaskManager {
     HistoryManager historyManager = Managers.getDefaultHistory();
 
     @Override
-    public int getNextID() {
-        return ++taskID;
-    }
-
-    @Override
     public void addToList(Task task) {
+        if (task.getTaskID() == 0) {
+            task.setTaskID(getNextID());
+        }
         if (task.getClass() != Subtask.class) {
             taskList.put(task.getTaskID(), task);
         }
@@ -149,6 +147,10 @@ public class InMemoryTaskManager implements TaskManager {
             }
         }
         return typedList;
+    }
+
+    private int getNextID() {
+        return ++taskID;
     }
 
     private void deleteTasksByClass(Class<? extends Task> clazz) {

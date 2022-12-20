@@ -5,8 +5,6 @@ import java.util.List;
 
 public interface TaskManager {
 
-    int getNextID();
-
     void addToList(Task task);
 
     Task getTask(int taskID);

@@ -1,14 +1,14 @@
 package service;
 
-public class Managers<T extends TaskManager> {
+public class Managers {
 
-    private final T taskManager;
+    private final TaskManager taskManager;
 
-    public Managers(T taskManager) {
+    public Managers(TaskManager taskManager) {
         this.taskManager = taskManager;
     }
 
-    public T getDefault() {
+    public TaskManager getDefault() {
         return taskManager;
     }
 
