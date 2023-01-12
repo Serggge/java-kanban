@@ -1,18 +1,14 @@
 package service;
 
-public class Managers {
+public final class Managers {
 
-    private final TaskManager taskManager;
+    private Managers() {}
 
-    public Managers(TaskManager taskManager) {
-        this.taskManager = taskManager;
+    public static TaskManager getDefault() {
+        return new InMemoryTaskManager();
     }
 
-    public TaskManager getDefault() {
-        return taskManager;
-    }
-
-    public static HistoryManager getDefaultHistory() {
+    static HistoryManager getDefaultHistory() {
         return new InMemoryHistoryManager();
     }
 

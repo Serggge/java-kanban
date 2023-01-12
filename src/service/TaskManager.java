@@ -7,9 +7,9 @@ public interface TaskManager {
 
     void addToList(Task task);
 
-    Task getTask(int taskID);
+    void getTask(int taskID);
 
-    Task getEpic(int taskID);
+    void getEpic(int taskID);
 
     Task getSubtask(int taskID);
 
@@ -23,9 +23,7 @@ public interface TaskManager {
 
     void deleteTasks();
 
-    void deleteEpicTasks();
-
-    void deleteSubtasks();
+    void deleteEpicTask(int taskID);
 
     void deleteAllTasks();
 

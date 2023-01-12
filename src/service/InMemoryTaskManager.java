@@ -23,19 +23,27 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Task getTask(int taskID) {
-        checkRequestForError(taskID, Task.class);
-        Task resultTask = taskList.get(taskID);
-        historyManager.add(resultTask);
-        return resultTask;
+    public void getTask(int taskID) {
+        Task result;
+        if (taskList.containsKey(taskID)) {
+            result = taskList.get(taskID);
+            historyManager.add(result);
+        } else {
+            result = getSubtask(taskID);
+        }
+        if (result == null) {
+            throw new RuntimeException("При вызове метода getTask(int taskID) возникла ошибка: задача " +
+                    "с указанным ID не найдена");
+        }
     }
 
     @Override
-    public Task getEpic(int taskID) {
-        checkRequestForError(taskID, Epic.class);
-        Task resultTask = taskList.get(taskID);
-        historyManager.add(resultTask);
-        return resultTask;
+    public void getEpic(int taskID) {
+        Task result = taskList.get(taskID);
+        if (result == null) {
+            throw new RuntimeException("Эпик с ID = " + taskID + " не найден");
+        }
+        historyManager.add(result);
     }
 
     @Override
@@ -43,9 +51,9 @@ public class InMemoryTaskManager implements TaskManager {
         for (Task task : getEpicTaskList()) {
             Epic epicTask = (Epic) task;
             if (epicTask.getListSubtaskID().contains(taskID)) {
-                Task resultTask = epicTask.getSubtask(taskID);
-                historyManager.add(resultTask);
-                return resultTask;
+                Task result = epicTask.getSubtask(taskID);
+                historyManager.add(result);
+                return result;
             }
         }
         if (taskList.containsKey(taskID)) {
@@ -80,15 +88,19 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void deleteTask(int taskID) {
         if (taskList.containsKey(taskID)) {
+            if (taskList.get(taskID).getClass() == Epic.class) {
+                deleteEpicTask(taskID);
+                return;
+            }
             taskList.remove(taskID);
-            System.out.printf("Задача с ID=%d удалена.\n", taskID);
+            historyManager.remove(taskID);
             return;
         } else {
             for (Task task : getEpicTaskList()) {
                 Epic epicTask = (Epic) task;
                 if (epicTask.getListSubtaskID().contains(taskID)) {
                     epicTask.removeSubtaskByID(taskID);
-                    System.out.printf("Подзадача с ID=%d удалена.\n", taskID);
+                    historyManager.remove(taskID);
                     return;
                 }
             }
@@ -97,46 +109,37 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
+    public void deleteEpicTask(int taskID) {
+        Epic epic = (Epic) taskList.get(taskID);
+        for (Task subtask : epic.getSubtaskList()) {
+            historyManager.remove(subtask.getTaskID());
+        }
+        historyManager.remove(taskID);
+        taskList.remove(taskID);
+    }
+
+    @Override
     public void deleteTasks() {
-        deleteTasksByClass(Task.class);
-    }
-
-    @Override
-    public void deleteEpicTasks() {
-        deleteTasksByClass(Epic.class);
-    }
-
-    @Override
-    public void deleteSubtasks() {
-        for (Task task : getEpicTaskList()) {
-            Epic epicTask = (Epic) task;
-            epicTask.removeSubtasks();
+        for (Task task : getTaskList()) {
+            historyManager.remove(task.getTaskID());
+            taskList.remove(task.getTaskID());
         }
     }
 
     @Override
     public void deleteAllTasks() {
         deleteTasks();
-        deleteEpicTasks();
-    }
-
-    public void printTaskList() {
-        printTasksByClass(Task.class);
-    }
-
-    public void printEpicTaskList() {
-        printTasksByClass(Epic.class);
-    }
-
-    public void printSubtaskList() {
         for (Task task : getEpicTaskList()) {
-            Epic epicTask = (Epic) task;
-            epicTask.printSubtaskList();
+            deleteEpicTask(task.getTaskID());
         }
     }
 
     public void printHistory() {
         historyManager.getHistory().forEach(System.out::println);
+    }
+
+    private int getNextID() {
+        return ++taskID;
     }
 
     private List<Task> getListByClass(Class<? extends Task> clazz) {
@@ -147,36 +150,6 @@ public class InMemoryTaskManager implements TaskManager {
             }
         }
         return typedList;
-    }
-
-    private int getNextID() {
-        return ++taskID;
-    }
-
-    private void deleteTasksByClass(Class<? extends Task> clazz) {
-        for (Task task : taskList.values()) {
-            if (task.getClass() == clazz) {
-                taskList.remove(task.getTaskID());
-            }
-        }
-    }
-
-    private void printTasksByClass(Class<? extends Task> clazz) {
-        for (Task task : taskList.values()) {
-            if (task.getClass() == clazz) {
-                System.out.println(task);
-            }
-        }
-    }
-
-    private void checkRequestForError(int taskID, Class<? extends Task> clazz) {
-        if (!taskList.containsKey(taskID)) {
-            throw new RuntimeException("Задача с ID=" + taskID + " в списках не найдена.");
-        }
-        if (taskList.get(taskID).getClass() != clazz) {
-            throw new RuntimeException("Ошибка соответствия класса. Запрошен класс: " + clazz +
-                    ". Задача с ID=" + taskID + " соответствует классу: " + taskList.get(taskID).getClass());
-        }
     }
 
 }
