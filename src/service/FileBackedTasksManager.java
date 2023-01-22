@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-
+import java.util.*;
 import static java.nio.file.StandardOpenOption.*;
 
 public class FileBackedTasksManager extends InMemoryTaskManager {
@@ -100,7 +98,8 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
         try {
             Files.writeString(path, "id;type;name;status;description;epic\n", StandardCharsets.UTF_8,
                     CREATE, TRUNCATE_EXISTING);
-            for (Task task : taskList.values()) {
+            Set<Task> sortedSet = new TreeSet<>(taskList.values());
+            for (Task task : sortedSet) {
                 Files.writeString(path, task.toString() + "\n", StandardCharsets.UTF_8, APPEND);
             }
             Files.writeString(path, historyToString(historyManager), StandardCharsets.UTF_8, APPEND);
@@ -123,6 +122,9 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
             case EPIC:
                 task = new Epic(elements[2], elements[4]);
         }
+        if (task == null) {
+            throw new RuntimeException("Ошибка при преобразовании строки в Задачу. task = null");
+        }
         task.setTaskID(Integer.parseInt(elements[0]));
         task.setStatus(TaskStatus.valueOf(elements[3]));
         return task;
@@ -138,12 +140,12 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
     }
 
     private static List<Integer> historyFromString(String value) {
-        List<Integer> taskHistory = new ArrayList<>();
+        List<Integer> listId = new ArrayList<>();
         String[] elements = value.split(";");
         for (String taskId : elements) {
-            taskHistory.add(Integer.valueOf(taskId));
+            listId.add(Integer.valueOf(taskId));
         }
-        return taskHistory;
+        return listId;
     }
 
     private static FileBackedTasksManager loadFromFile(File file) {
@@ -168,4 +170,5 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
         }
         return manager;
     }
+
 }

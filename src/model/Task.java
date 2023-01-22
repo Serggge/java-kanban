@@ -2,7 +2,7 @@ package model;
 
 import java.util.Objects;
 
-public class Task {
+public class Task implements Comparable<Task> {
 
     protected String taskName;
     protected String description;
@@ -51,6 +51,11 @@ public class Task {
     public String toString() {
         return String.format("%d;%s;%s;%s;%s;", taskID, getClass().getSimpleName(),
                 taskName, taskStatus, description);
+    }
+
+    @Override
+    public int compareTo(Task o) {
+        return taskID - o.taskID;
     }
 
 }
