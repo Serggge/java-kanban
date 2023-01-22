@@ -24,4 +24,9 @@ public class Subtask extends Task {
         }
     }
 
+    @Override
+    public String toString() {
+        return super.toString() + epicTask.getTaskID();
+    }
+
 }

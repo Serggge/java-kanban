@@ -49,11 +49,8 @@ public class Task {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" +
-                "taskName='" + taskName + '\'' +
-                ", description='" + description + '\'' +
-                ", taskID=" + taskID +
-                ", taskStatus=" + taskStatus +
-                '}';
+        return String.format("%d;%s;%s;%s;%s;", taskID, getClass().getSimpleName(),
+                taskName, taskStatus, description);
     }
+
 }

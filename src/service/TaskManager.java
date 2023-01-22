@@ -1,5 +1,6 @@
 package service;
 
+import model.Epic;
 import model.Task;
 import java.util.List;
 
@@ -7,9 +8,9 @@ public interface TaskManager {
 
     void addToList(Task task);
 
-    void getTask(int taskID);
+    Task getTask(int taskID);
 
-    void getEpic(int taskID);
+    Epic getEpic(int taskID);
 
     Task getSubtask(int taskID);
 

@@ -9,8 +9,13 @@ import java.util.HashMap;
 public class InMemoryHistoryManager implements HistoryManager {
 
     private final Map<Integer, Node> browsingHistory = new HashMap<>();
-    private Node head = new Node(null);
-    private Node last;
+    private final Node head = new Node(null);
+    private final Node tail = new Node(null);
+
+    protected InMemoryHistoryManager() {
+        head.next = tail;
+        tail.prev = head;
+    }
 
     @Override
     public void add(Task task) {
@@ -18,7 +23,7 @@ public class InMemoryHistoryManager implements HistoryManager {
         if (browsingHistory.containsKey(taskID)) {
             remove(taskID);
         }
-        browsingHistory.put(task.getTaskID(), linkLast(task));
+        browsingHistory.put(taskID, linkLast(task));
     }
 
     @Override
@@ -26,7 +31,8 @@ public class InMemoryHistoryManager implements HistoryManager {
         if (browsingHistory.containsKey(taskID)) {
             if (browsingHistory.size() == 1) {
                 browsingHistory.clear();
-                head = last = null;
+                head.next = tail;
+                tail.prev = head;
             } else {
                 removeNode(browsingHistory.get(taskID));
                 browsingHistory.remove(taskID);
@@ -44,50 +50,36 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     private List<Task> getTasks() {
         List<Task> taskList = new ArrayList<>();
-        if (!head.hasNext()) {
-            return taskList;
-        }
         Node node = head.next;
         while (node.hasNext()) {
             taskList.add(node.task);
             node = node.next;
         }
-        taskList.add(last.task);
         return taskList;
     }
 
     private Node linkLast(Task task) {
         Node newView = new Node(task);
-        if (head.next == null) {
-            newView.prev = head;
-            head.next = newView;
-        } else {
-            newView.prev = last;
-            last.next = newView;
-        }
-        last = newView;
+        Node last = tail.prev;
+        last.next = newView;
+        newView.prev = last;
+        newView.next = tail;
+        tail.prev = newView;
         return newView;
     }
 
     private void removeNode(Node node) {
-        if (node == head.next) {
-            head.next = node.next;
-        } else if (node == last) {
-            last = node.prev;
-            last.next = null;
-        } else {
-            Node prevNode = node.prev;
-            Node nextNode = node.next;
-            prevNode.next = nextNode;
-            nextNode.prev = prevNode;
-        }
+        Node prevNode = node.prev;
+        Node nextNode = node.next;
+        prevNode.next = nextNode;
+        nextNode.prev = prevNode;
     }
 
     private static class Node {
 
         Node next;
         Node prev;
-        Task task;
+        final Task task;
 
         Node(Task task) {
             this.task = task;
