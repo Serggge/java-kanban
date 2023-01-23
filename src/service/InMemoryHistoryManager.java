@@ -9,38 +9,24 @@ import java.util.HashMap;
 public class InMemoryHistoryManager implements HistoryManager {
 
     private final Map<Integer, Node> browsingHistory = new HashMap<>();
-    private final Node head = new Node(null);
-    private final Node tail = new Node(null);
-
-    protected InMemoryHistoryManager() {
-        head.next = tail;
-        tail.prev = head;
-    }
+    private Node head;
+    private Node tail;
 
     @Override
     public void add(Task task) {
         int taskID = task.getTaskID();
+        Node newNode = new Node(task);
         if (browsingHistory.containsKey(taskID)) {
-            remove(taskID);
+            removeNode(browsingHistory.get(taskID));
         }
-        browsingHistory.put(taskID, linkLast(task));
+        linkLast(newNode);
+        browsingHistory.put(taskID, newNode);
     }
 
     @Override
     public void remove(int taskID) {
-        if (browsingHistory.containsKey(taskID)) {
-            if (browsingHistory.size() == 1) {
-                browsingHistory.clear();
-                head.next = tail;
-                tail.prev = head;
-            } else {
-                removeNode(browsingHistory.get(taskID));
-                browsingHistory.remove(taskID);
-            }
-        } else {
-            throw new RuntimeException("Попытка удалить из истории просмотров несуществующей " +
-                    "задачи с ID = " + taskID);
-        }
+        removeNode(browsingHistory.get(taskID));
+        browsingHistory.remove(taskID);
     }
 
     @Override
@@ -50,29 +36,44 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     private List<Task> getTasks() {
         List<Task> taskList = new ArrayList<>();
-        Node node = head.next;
-        while (node.hasNext()) {
+        Node node = head;
+        while (node != null) {
             taskList.add(node.task);
             node = node.next;
         }
         return taskList;
     }
 
-    private Node linkLast(Task task) {
-        Node newView = new Node(task);
-        Node last = tail.prev;
-        last.next = newView;
-        newView.prev = last;
-        newView.next = tail;
-        tail.prev = newView;
-        return newView;
+    private void linkLast(Node newNode) { //void
+        if (head == null) {
+            head = newNode;
+        } else {
+            tail.next = newNode;
+            newNode.prev = tail;
+        }
+        tail = newNode;
     }
 
     private void removeNode(Node node) {
-        Node prevNode = node.prev;
-        Node nextNode = node.next;
-        prevNode.next = nextNode;
-        nextNode.prev = prevNode;
+        if (node == head) {
+            if (head == tail) {
+                head = null;
+                tail = null;
+            } else {
+                Node nextNode = head.next;
+                nextNode.prev = null;
+                head = nextNode;
+            }
+        } else if (node == tail) {
+            Node prevNode = tail.prev;
+            prevNode.next = null;
+            tail = prevNode;
+        } else {
+            Node prevNode = node.prev;
+            Node nextNode = node.next;
+            prevNode.next = nextNode;
+            nextNode.prev = prevNode;
+        }
     }
 
     private static class Node {
@@ -85,9 +86,6 @@ public class InMemoryHistoryManager implements HistoryManager {
             this.task = task;
         }
 
-        boolean hasNext() {
-            return next != null;
-        }
     }
 
 }

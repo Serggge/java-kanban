@@ -1,12 +1,14 @@
 package service;
 
 import model.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+
 import static java.nio.file.StandardOpenOption.*;
 
 public class FileBackedTasksManager extends InMemoryTaskManager {
@@ -39,9 +41,11 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
         studyJava.setStatus(TaskStatus.DONE);
         findJob.setStatus(TaskStatus.DONE);
         taskManager.getTask(1);
+        taskManager.deleteTask(1);
         taskManager.getTask(3);
         taskManager.getTask(2);
         taskManager.getTask(4);
+        taskManager.getTask(2);
 
         FileBackedTasksManager manager = loadFromFile(file);
         System.out.println("Список простых задач:");
@@ -112,15 +116,16 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
         Task task = null;
         String[] elements = value.split(";");
         switch (TaskType.valueOf(elements[1].toUpperCase())) {
-            case SUBTASK:
-                int epicTaskId = Integer.parseInt(elements[5]);
-                task = new Subtask(getEpic(epicTaskId), elements[2], elements[4]);
-                break;
             case TASK:
                 task = new Task(elements[2], elements[4]);
                 break;
             case EPIC:
                 task = new Epic(elements[2], elements[4]);
+                break;
+            case SUBTASK:
+                int epicTaskId = Integer.parseInt(elements[5]);
+                Epic epic = (Epic) taskList.get(epicTaskId);
+                task = new Subtask(epic, elements[2], elements[4]);
         }
         if (task == null) {
             throw new RuntimeException("Ошибка при преобразовании строки в Задачу. task = null");
@@ -165,8 +170,10 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
             manager.taskList.put(task.getTaskID(), task);
         }
         String historyEntry = backUp.get(backUp.size() - 1);
-        for (int taskId : historyFromString(historyEntry)) {
-            manager.getTask(taskId);
+        if (!historyEntry.isBlank()) {
+            for (int taskId : historyFromString(historyEntry)) {
+                manager.getTask(taskId);
+            }
         }
         return manager;
     }
