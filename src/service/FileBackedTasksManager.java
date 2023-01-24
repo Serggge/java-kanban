@@ -113,26 +113,33 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
     }
 
     private Task fromString(String value) {
-        Task task = null;
-        String[] elements = value.split(";");
-        switch (TaskType.valueOf(elements[1].toUpperCase())) {
-            case TASK:
-                task = new Task(elements[2], elements[4]);
-                break;
-            case EPIC:
-                task = new Epic(elements[2], elements[4]);
-                break;
-            case SUBTASK:
-                int epicTaskId = Integer.parseInt(elements[5]);
-                Epic epic = (Epic) taskList.get(epicTaskId);
-                task = new Subtask(epic, elements[2], elements[4]);
+        try {
+            Task task = null;
+            String[] elements = value.split(";");
+            int taskId = Integer.parseInt(elements[0]);
+            TaskType taskType = TaskType.valueOf(elements[1].toUpperCase());
+            String taskName = elements[2];
+            TaskStatus taskStatus = TaskStatus.valueOf(elements[3]);
+            String description = elements[4];
+            switch (taskType) {
+                case TASK:
+                    task = new Task(taskName, description);
+                    break;
+                case EPIC:
+                    task = new Epic(taskName, description);
+                    break;
+                case SUBTASK:
+                    int epicTaskId = Integer.parseInt(elements[5]);
+                    Epic epic = (Epic) taskList.get(epicTaskId);
+                    task = new Subtask(epic, taskName, description);
+            }
+            task.setTaskID(taskId);
+            task.setStatus(taskStatus);
+            return task;
+        } catch (Exception ex) {
+            throw new TaskCreationException("Непредвиденная ошибка при попытке создать задачу" +
+                    " в методе fromString(String value)", ex);
         }
-        if (task == null) {
-            throw new RuntimeException("Ошибка при преобразовании строки в Задачу. task = null");
-        }
-        task.setTaskID(Integer.parseInt(elements[0]));
-        task.setStatus(TaskStatus.valueOf(elements[3]));
-        return task;
     }
 
     private static String historyToString(HistoryManager manager) {
@@ -160,7 +167,7 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
             backUp = Files.readAllLines(Path.of(file.getAbsolutePath()));
             backUp.remove(0);
         } catch (IOException ex) {
-            throw new ManagerSaveException("Ошибка при загрузке из файла", ex);
+            throw new ManagerLoadException("Ошибка при загрузке из файла", ex);
         }
         for (String entry : backUp) {
             if (entry.isBlank()) {
