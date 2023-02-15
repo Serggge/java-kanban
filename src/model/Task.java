@@ -1,18 +1,46 @@
 package model;
 
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public class Task implements Comparable<Task> {
 
+    protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    protected static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    protected static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
     protected String taskName;
     protected String description;
     protected int taskID;
     protected TaskStatus taskStatus;
+    protected Supplier<Duration> duration;
+    protected Supplier<LocalDateTime> startTime;
 
     public Task(String taskName, String description) {
         this.taskName = taskName;
         this.description = description;
         this.taskStatus = TaskStatus.NEW;
+    }
+
+    public Task(String taskName, String description, String date, String time, int duration) {
+        this(taskName, description);
+        startTime = () -> LocalDateTime.of(LocalDate.parse(date, DATE_FORMATTER),
+                LocalTime.parse(time, TIME_FORMATTER));
+        this.duration = () -> Duration.ofMinutes(duration);
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime != null ? startTime.get() : null;
+    }
+
+    public LocalDateTime getEndTime() {
+        return startTime != null ? startTime.get()
+                                            .plus(duration.get()) : null;
+    }
+
+    public Duration getDuration() {
+        return duration != null ? duration.get() : null;
     }
 
     public int getTaskID() {
@@ -38,19 +66,54 @@ public class Task implements Comparable<Task> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Task task = (Task) o;
-        return taskID == task.taskID && Objects.equals(taskName, task.taskName) &&
-                Objects.equals(description, task.description) && taskStatus == task.taskStatus;
+        return taskID == task.taskID;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskName, description, taskID, taskStatus);
+        return Objects.hash(taskID);
+    }
+
+    public String getStringForSave() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(taskID)
+          .append(";")
+          .append(getClass().getSimpleName())
+          .append(";")
+          .append(taskName)
+          .append(";")
+          .append(taskStatus)
+          .append(";")
+          .append(description)
+          .append(";");
+        if (this.getStartTime() != null) {
+            sb.append(startTime.get()
+                               .toLocalDate()
+                               .format(DATE_FORMATTER))
+              .append(";");
+            sb.append(startTime.get()
+                               .toLocalTime()
+                               .format(TIME_FORMATTER))
+              .append(";");
+            if (this.getDuration() != null) {
+                sb.append(duration.get()
+                                  .toMinutes())
+                  .append(";");
+            }
+        } else {
+            sb.append(";;;");
+        }
+        return sb.toString();
     }
 
     @Override
     public String toString() {
-        return String.format("%d;%s;%s;%s;%s;", taskID, getClass().getSimpleName(),
-                taskName, taskStatus, description);
+        String startTime = this.getStartTime() == null ? "none" : this.getStartTime()
+                                                                      .format(DATE_TIME_FORMATTER);
+        String duration = this.getDuration() == null ? "none" : String.valueOf(this.getDuration()
+                                                                                   .toMinutes());
+        return String.format("ID=%d Name:%s Description:%s Type:%s Status:%s Start:%s Duration_in_minutes:%s", taskID,
+                taskName, description, getClass().getSimpleName(), taskStatus, startTime, duration);
     }
 
     @Override

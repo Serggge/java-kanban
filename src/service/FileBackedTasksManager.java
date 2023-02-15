@@ -1,13 +1,15 @@
 package service;
 
 import model.*;
-
+import service.exceptions.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardOpenOption.*;
 
@@ -19,62 +21,11 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
         path = Path.of(file.getPath());
     }
 
-    public static void main(String[] args) {
-        File file = new File("src/resources/backup.csv");
-        TaskManager taskManager = new FileBackedTasksManager(file);
-
-        Task goWalk = new Task("Пойти на прогулку", "Минут 15-30 спокойной ходьбы");
-        Task cleanRoom = new Task("Прибраться в квартире", "Не забыть пропылесосить!");
-        taskManager.addToList(goWalk);
-        taskManager.addToList(cleanRoom);
-        Epic becomeDeveloper = new Epic("Стать разработчиком",
-                "Освоить технологию Java и устроиться на работу по специальности");
-        taskManager.addToList(becomeDeveloper);
-        Subtask studyJava = new Subtask(becomeDeveloper, "Освоить технологию Java",
-                "Пройти курсы по разработке на Java");
-        taskManager.addToList(studyJava);
-        Subtask findJob = new Subtask(becomeDeveloper,
-                "Найти работу по специальности", "Специальность Java developer");
-        taskManager.addToList(findJob);
-        Epic findSock = new Epic("Найти второй носок после стирки", "Крайне маловероятно");
-        taskManager.addToList(findSock);
-        studyJava.setStatus(TaskStatus.DONE);
-        findJob.setStatus(TaskStatus.DONE);
-        taskManager.getTask(1);
-        taskManager.deleteTask(1);
-        taskManager.getTask(3);
-        taskManager.getTask(2);
-        taskManager.getTask(4);
-        taskManager.getTask(2);
-
-        FileBackedTasksManager manager = loadFromFile(file);
-        System.out.println("Список простых задач:");
-        for (Task task : manager.getTaskList()) {
-            System.out.println(task.toString());
-        }
-        System.out.println("-------------------------------------");
-        System.out.println("Список эпиков и их подзадач, если есть:");
-        for (Task task : manager.getEpicTaskList()) {
-            System.out.println(task.toString());
-            Epic epic = (Epic) task;
-            for (Task subtask : epic.getSubtaskList()) {
-                System.out.println(subtask.toString());
-            }
-        }
-        System.out.println("-------------------------------");
-        System.out.println("Отдельно подзадачи:");
-        for (Task task : manager.getSubtaskList()) {
-            System.out.println(task.toString());
-        }
-        System.out.println("--------------------------------");
-        System.out.println("История просмотров после восстановления:");
-        manager.printHistory();
-    }
-
     @Override
-    public void addToList(Task task) {
-        super.addToList(task);
+    public int addToList(Task task) {
+        int id = super.addToList(task);
         save();
+        return id;
     }
 
     @Override
@@ -98,89 +49,112 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
         return subtask;
     }
 
+    @Override
+    public void deleteTask(int taskID) {
+        super.deleteTask(taskID);
+        save();
+    }
+
     private void save() {
         try {
-            Files.writeString(path, "id;type;name;status;description;epic\n", StandardCharsets.UTF_8,
-                    CREATE, TRUNCATE_EXISTING);
+            Files.writeString(path, "id;type;name;status;description;date;time;duration;epic;\n",
+                    StandardCharsets.UTF_8, CREATE, TRUNCATE_EXISTING);
             Set<Task> sortedSet = new TreeSet<>(taskList.values());
             for (Task task : sortedSet) {
-                Files.writeString(path, task.toString() + "\n", StandardCharsets.UTF_8, APPEND);
+                Files.writeString(path, task.getStringForSave() + "\n", StandardCharsets.UTF_8, APPEND);
             }
-            Files.writeString(path, historyToString(historyManager), StandardCharsets.UTF_8, APPEND);
+            Files.writeString(path, "\n" + historyToString(historyManager), StandardCharsets.UTF_8, APPEND);
         } catch (IOException ex) {
             throw new ManagerSaveException("Ошибка при записи в файл", ex);
         }
     }
 
     private Task fromString(String value) {
+        int maxNumParams = 9;
         try {
-            Task task = null;
-            String[] elements = value.split(";");
-            int taskId = Integer.parseInt(elements[0]);
-            TaskType taskType = TaskType.valueOf(elements[1].toUpperCase());
-            String taskName = elements[2];
-            TaskStatus taskStatus = TaskStatus.valueOf(elements[3]);
-            String description = elements[4];
+            List<Optional<String>> params = Arrays.stream(value.split(";"))
+                                                  .map(elem -> elem.isEmpty() ? null : elem)
+                                                  .map(Optional::ofNullable)
+                                                  .collect(Collectors.toList());
+            while (params.size() < maxNumParams) {
+                params.add(Optional.empty());
+            }
+            Task task;
+            int taskId = Integer.parseInt(params.get(0)
+                                                .orElseThrow());
+            TaskType taskType = TaskType.valueOf(params.get(1)
+                                                       .orElseThrow()
+                                                       .toUpperCase());
+            String taskName = params.get(2)
+                                    .orElseThrow();
+            TaskStatus taskStatus = TaskStatus.valueOf(params.get(3)
+                                                             .orElseThrow());
+            String description = params.get(4)
+                                       .orElseThrow();
+            Optional<String> date = params.get(5);
+            Optional<String> time = params.get(6);
+            int duration = params.get(7)
+                                 .isPresent() ? Integer.parseInt(params.get(7)
+                                                                       .get()) : 0;
+            Optional<String> epicId = params.get(8);
             switch (taskType) {
                 case TASK:
-                    task = new Task(taskName, description);
+                    task = date.isEmpty() ? new Task(taskName, description) : new Task(taskName, description,
+                            date.get(), time.orElseThrow(), duration);
                     break;
                 case EPIC:
                     task = new Epic(taskName, description);
                     break;
                 case SUBTASK:
-                    int epicTaskId = Integer.parseInt(elements[5]);
-                    Epic epic = (Epic) taskList.get(epicTaskId);
-                    task = new Subtask(epic, taskName, description);
+                    Epic epic = (Epic) taskList.get(Integer.parseInt(epicId.orElseThrow()));
+                    task = date.isEmpty() ? new Subtask(epic, taskName, description) : new Subtask(epic, taskName,
+                            description, date.get(), time.orElseThrow(), duration);
+                    break;
+                default:
+                    throw new TaskLoadException(
+                            "Непредвиденная ошибка при попытке создать задачу" + " в методе fromString(String value)");
             }
             task.setTaskID(taskId);
             task.setStatus(taskStatus);
             return task;
         } catch (Exception ex) {
-            throw new TaskCreationException("Непредвиденная ошибка при попытке создать задачу" +
-                    " в методе fromString(String value)", ex);
+            throw new TaskLoadException(
+                    "Непредвиденная ошибка при попытке создать задачу" + " в методе fromString(String value)", ex);
         }
     }
 
     private static String historyToString(HistoryManager manager) {
-        List<Task> taskHistory = manager.getHistory();
-        StringBuilder sb = new StringBuilder("\n");
-        for (Task task : taskHistory) {
-            sb.append(task.getTaskID()).append(";");
-        }
-        return sb.toString();
+        return manager.getHistory()
+                      .stream()
+                      .map(task -> String.valueOf(task.getTaskID()))
+                      .collect(Collectors.joining(";"));
     }
 
     private static List<Integer> historyFromString(String value) {
-        List<Integer> listId = new ArrayList<>();
-        String[] elements = value.split(";");
-        for (String taskId : elements) {
-            listId.add(Integer.valueOf(taskId));
-        }
-        return listId;
+        return value.lines()
+                    .flatMap(line -> Arrays.stream(line.split(";")))
+                    .map(Integer::valueOf)
+                    .collect(Collectors.toList());
     }
 
-    private static FileBackedTasksManager loadFromFile(File file) {
+    public static FileBackedTasksManager loadFromFile(File file) {
         FileBackedTasksManager manager = new FileBackedTasksManager(file);
-        List<String> backUp;
-        try {
-            backUp = Files.readAllLines(Path.of(file.getAbsolutePath()));
-            backUp.remove(0);
+        try (Stream<String> stream = Files.lines(file.toPath())) {
+            List<String> tasks = stream.skip(1)
+                                       .collect(Collectors.toList());
+            tasks.stream()
+                 .takeWhile(line -> !line.isBlank())
+                 .map(manager::fromString)
+                 .forEach(manager::addToList);
+            System.out.println();
+            tasks.get(tasks.size() - 1)
+                 .lines()
+                 .flatMap(line -> Arrays.stream(line.split(";")))
+                 .mapToInt(Integer::parseInt)
+                 .forEach(manager::getTask);
+            System.out.println();
         } catch (IOException ex) {
             throw new ManagerLoadException("Ошибка при загрузке из файла", ex);
-        }
-        for (String entry : backUp) {
-            if (entry.isBlank()) {
-                break;
-            }
-            Task task = manager.fromString(entry);
-            manager.taskList.put(task.getTaskID(), task);
-        }
-        String historyEntry = backUp.get(backUp.size() - 1);
-        if (!historyEntry.isBlank()) {
-            for (int taskId : historyFromString(historyEntry)) {
-                manager.getTask(taskId);
-            }
         }
         return manager;
     }

@@ -1,4 +1,4 @@
-package service;
+package service.exceptions;
 
 public class ManagerLoadException extends RuntimeException {
 
@@ -14,7 +14,7 @@ public class ManagerLoadException extends RuntimeException {
         super(cause);
     }
 
-    ManagerLoadException(String message, Throwable cause) {
+    public ManagerLoadException(String message, Throwable cause) {
         super(message, cause);
     }
 

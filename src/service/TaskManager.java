@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface TaskManager {
 
-    void addToList(Task task);
+    int addToList(Task task);
 
     Task getTask(int taskID);
 
@@ -20,6 +20,8 @@ public interface TaskManager {
 
     List<Task> getSubtaskList();
 
+    List<Task> getAllTasks();
+
     void deleteTask(int taskID);
 
     void deleteTasks();
@@ -28,4 +30,7 @@ public interface TaskManager {
 
     void deleteAllTasks();
 
+    List<Task> getHistory();
+
+    List<Task> getPrioritizedTasks();
 }

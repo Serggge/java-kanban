@@ -25,6 +25,9 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     @Override
     public void remove(int taskID) {
+        if (!browsingHistory.containsKey(taskID)) {
+            return;
+        }
         removeNode(browsingHistory.get(taskID));
         browsingHistory.remove(taskID);
     }

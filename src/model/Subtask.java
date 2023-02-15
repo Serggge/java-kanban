@@ -9,6 +9,11 @@ public class Subtask extends Task {
         this.epicTask = epicTask;
     }
 
+    public Subtask(Epic epicTask, String taskName, String description, String date, String time, int duration) {
+        super(taskName, description, date, time, duration);
+        this.epicTask = epicTask;
+    }
+
     @Override
     public void setTaskID(int taskID) {
         super.setTaskID(taskID);
@@ -25,8 +30,13 @@ public class Subtask extends Task {
     }
 
     @Override
+    public String getStringForSave() {
+        return super.getStringForSave() + epicTask.getTaskID();
+    }
+
+    @Override
     public String toString() {
-        return super.toString() + epicTask.getTaskID();
+        return super.toString() + " EpicId=" + epicTask.getTaskID();
     }
 
 }
