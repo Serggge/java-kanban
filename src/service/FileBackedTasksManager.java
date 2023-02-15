@@ -111,14 +111,14 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
                             description, date.get(), time.orElseThrow(), duration);
                     break;
                 default:
-                    throw new TaskLoadException(
+                    throw new TaskCreateFromFileException(
                             "Непредвиденная ошибка при попытке создать задачу" + " в методе fromString(String value)");
             }
             task.setTaskID(taskId);
             task.setStatus(taskStatus);
             return task;
         } catch (Exception ex) {
-            throw new TaskLoadException(
+            throw new TaskCreateFromFileException(
                     "Непредвиденная ошибка при попытке создать задачу" + " в методе fromString(String value)", ex);
         }
     }
@@ -146,13 +146,11 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
                  .takeWhile(line -> !line.isBlank())
                  .map(manager::fromString)
                  .forEach(manager::addToList);
-            System.out.println();
             tasks.get(tasks.size() - 1)
                  .lines()
                  .flatMap(line -> Arrays.stream(line.split(";")))
                  .mapToInt(Integer::parseInt)
                  .forEach(manager::getTask);
-            System.out.println();
         } catch (IOException ex) {
             throw new ManagerLoadException("Ошибка при загрузке из файла", ex);
         }

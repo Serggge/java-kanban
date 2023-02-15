@@ -2,7 +2,10 @@ package service;
 
 import model.*;
 import service.exceptions.IntersectionTimeException;
+import service.exceptions.TaskNotFoundException;
+
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class InMemoryTaskManager implements TaskManager {
 
@@ -32,6 +35,9 @@ public class InMemoryTaskManager implements TaskManager {
         taskList.put(task.getTaskID(), task);
         if (task.getClass() != Epic.class) {
             checkForIntersections(task);
+            //Добавил в класс TaskManagerTest (в конец) ещё один тест для проверки приоритета:
+            // имя метода checkingCorrectSortingWhenTaskStartTimeChanges()
+            //с закоментированной ниже строкой удаления из трисета тест не проходит, потому оставляю её
             sortedByPriority.remove(task);
             sortedByPriority.add(task);
         }
@@ -48,9 +54,7 @@ public class InMemoryTaskManager implements TaskManager {
             result = getSubtask(taskID);
         }
         if (result == null) {
-            throw new RuntimeException(
-                    "При вызове метода getTask(int taskID) возникла ошибка: задача " +
-                            "с указанным ID не найдена");
+            throw new TaskNotFoundException("Задача не найдена");
         }
         return result;
     }
@@ -63,7 +67,7 @@ public class InMemoryTaskManager implements TaskManager {
             epic = (Epic) task;
         }
         if (epic == null) {
-            throw new RuntimeException("Эпик с ID = " + taskID + " не найден");
+            throw new TaskNotFoundException("Задача не найдена");
         }
         historyManager.add(epic);
         return epic;
@@ -80,11 +84,7 @@ public class InMemoryTaskManager implements TaskManager {
                 return result;
             }
         }
-        if (taskList.containsKey(taskID)) {
-            throw new RuntimeException("Ошибка соответствия класса. Запрошен класс: " + Subtask.class +
-                            ". Задача с ID=" + taskID + " соответствует классу: " + taskList.get(taskID).getClass());
-        }
-        throw new RuntimeException("Подзадача с ID=" + taskID + " в списках не найдена.");
+        throw new TaskNotFoundException("Задача не найдена.");
     }
 
     @Override
@@ -111,7 +111,10 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public List<Task> getAllTasks() {
-        return new ArrayList<>(taskList.values());
+        return taskList.values()
+                       .stream()
+                       .sorted(Comparator.naturalOrder())
+                       .collect(Collectors.toList());
     }
 
     @Override
@@ -136,14 +139,13 @@ public class InMemoryTaskManager implements TaskManager {
                 }
             }
         }
-        throw new RuntimeException("Задача с ID=" + taskID + " в списках не найдена.");
+        throw new TaskNotFoundException("Задача не найдена");
     }
 
     @Override
     public void deleteEpicTask(int taskID) {
         if (!taskList.containsKey(taskID)) {
-            throw new RuntimeException("Ошибка при вызове метода deleteEpicTask(int taskID) - " +
-                            "задача с указанным ID в списке не найдена");
+            throw new TaskNotFoundException("Задача не найдена");
         }
         Task task = taskList.get(taskID);
         if (task instanceof Epic) {
@@ -155,8 +157,7 @@ public class InMemoryTaskManager implements TaskManager {
             historyManager.remove(taskID);
             taskList.remove(taskID);
         } else {
-            throw new RuntimeException("Ошибка при вызове метода deleteEpicTask(int taskID) - " +
-                            "указанный ID задачи принадлежит не Эпику");
+            throw new TaskNotFoundException("Задача не найдена");
         }
     }
 
@@ -187,7 +188,8 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     public void printHistory() {
-        historyManager.getHistory().forEach(System.out::println);
+        historyManager.getHistory()
+                      .forEach(System.out::println);
     }
 
     protected int getNextId() {
@@ -216,22 +218,22 @@ public class InMemoryTaskManager implements TaskManager {
                     .isAfter(checkedTask.getStartTime()) && task.getStartTime()
                                                                 .isBefore(checkedTask.getEndTime())) {
                 throw new IntersectionTimeException(String.format(
-                        "Созданная задача с ID=%d имеет пересечение по времени с задачей ID=%d по времени начала",
-                        task.getTaskID(), checkedTask.getTaskID()));
-            }
-            if (task.getEndTime()
-                    .isAfter(checkedTask.getStartTime()) && task.getEndTime()
-                                                                .isBefore(checkedTask.getEndTime())) {
+                        "Созданная задача с имеет пересечение по времени с задачей ID=%d по времени начала",
+                        checkedTask.getTaskID()));
+            } else if (task.getEndTime()
+                           .isAfter(checkedTask.getStartTime()) && task.getEndTime()
+                                                                       .isBefore(checkedTask.getEndTime())) {
                 throw new IntersectionTimeException(String.format(
-                        "Созданная задача с ID=%d имеет пересечение по времени с задачей ID=%d по времени завершения",
-                        task.getTaskID(), checkedTask.getTaskID()));
-            }
-            if (task.getStartTime()
-                    .isBefore(checkedTask.getStartTime()) && task.getEndTime()
-                                                                 .isAfter(checkedTask.getEndTime())) {
+                        "Созданная задача с имеет пересечение по времени с задачей ID=%d по времени завершения",
+                        checkedTask.getTaskID()));
+                //добавил в класс TaskManagerTest (в конец) метод testIntersectionWhenNewTaskConsumesExistingOne()
+                //если убрать этот блок, то исключение не кидается
+            } else if (task.getStartTime()
+                           .isBefore(checkedTask.getStartTime()) && task.getEndTime()
+                                                                        .isAfter(checkedTask.getEndTime())) {
                 throw new IntersectionTimeException(String.format(
-                        "Созданная задача с ID=%d имеет пересечение по времени с задачей ID=%d по включению в диапазон",
-                        task.getTaskID(), checkedTask.getTaskID()));
+                        "Созданная задача имеет пересечение по времени с задачей ID=%d по включению в диапазон",
+                        checkedTask.getTaskID()));
             }
         }
     }

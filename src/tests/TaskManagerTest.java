@@ -6,7 +6,7 @@ import model.Epic;
 import model.Subtask;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
+import service.exceptions.IntersectionTimeException;
 import java.util.Collections;
 import java.util.List;
 
@@ -207,6 +207,45 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.deleteAllTasks();
 
         assertEquals(Collections.emptyList(), taskManager.getAllTasks());
+    }
+
+    @Test
+    public void checkingCorrectSortingWhenTaskStartTimeChanges() {
+        final Task earlyStartTask = new Task("Created in 1990", "1990",
+                "01.01.1990", "12:00", 10);
+        final Task lateStartTask = new Task("Created in 2010", "2010",
+                "01.01.2010", "12:00", 10);
+        final int earlyTaskId = taskManager.addToList(earlyStartTask);
+        final int lateTaskId = taskManager.addToList(lateStartTask);
+        final List<Task> priorityBeforeChange = taskManager.getPrioritizedTasks();
+        Task expectedTask = taskManager.getTask(earlyTaskId);
+        String taskDateTime = expectedTask.getDateTime();
+
+        assertEquals("01.01.1990 12:00", taskDateTime , "Время задач не совпадает");
+        assertEquals(expectedTask, priorityBeforeChange.get(0), "Приоритет по времени определён неверно");
+
+        earlyStartTask.setCurrentDateTime();
+        taskManager.addToList(earlyStartTask);
+        final List<Task> priorityAfterChange = taskManager.getPrioritizedTasks();
+        expectedTask = taskManager.getTask(lateTaskId);
+        taskDateTime = expectedTask.getDateTime();
+        assertEquals("01.01.2010 12:00", taskDateTime, "Время задач не совпадает");
+        assertEquals(expectedTask, priorityAfterChange.get(0), "Приоритет по времени определён неверно");
+    }
+
+    @Test
+    public void testIntersectionWhenNewTaskConsumesExistingOne() {
+        final Task firstTask = new Task("Existing", "2023",
+                "14.02.2023", "12:00", 10);
+        final Task secondTask = new Task("Comes", "2023",
+                "10.02.2023", "12:00", 60 * 24 * 10);
+        taskManager.addToList(firstTask);
+
+         final IntersectionTimeException exception = assertThrows(IntersectionTimeException.class,
+                 () -> taskManager.addToList(secondTask));
+
+         assertEquals("Созданная задача имеет пересечение по времени с задачей ID="
+                 + firstTask.getTaskID() + " по включению в диапазон", exception.getMessage());
     }
 
 }

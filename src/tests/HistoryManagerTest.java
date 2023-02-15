@@ -5,6 +5,7 @@ import service.HistoryManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import service.InMemoryHistoryManager;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +25,7 @@ class HistoryManagerTest {
         task1.setTaskID(1);
         task2 = new Task("2", "2");
         task2.setTaskID(2);
-        task3= new Task("3", "3");
+        task3 = new Task("3", "3");
         task3.setTaskID(3);
     }
 

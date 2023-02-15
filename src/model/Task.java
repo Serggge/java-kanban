@@ -25,10 +25,10 @@ public class Task implements Comparable<Task> {
 
     public Task(String taskName, String description, String date, String time, int duration) {
         this(taskName, description);
-        startTime = () -> LocalDateTime.of(LocalDate.parse(date, DATE_FORMATTER),
-                LocalTime.parse(time, TIME_FORMATTER));
-        this.duration = () -> Duration.ofMinutes(duration);
+        setDateTime(date, time);
+        setDuration(duration);
     }
+
 
     public LocalDateTime getStartTime() {
         return startTime != null ? startTime.get() : null;
@@ -59,6 +59,23 @@ public class Task implements Comparable<Task> {
 
     public void setStatus(TaskStatus taskStatus) {
         this.taskStatus = taskStatus;
+    }
+
+    public String getDateTime() {
+        return startTime.get() != null ? startTime.get().format(DATE_TIME_FORMATTER) : "none";
+    }
+
+    public void setDateTime(String date, String time) {
+        startTime = () -> LocalDateTime.of(LocalDate.parse(date, DATE_FORMATTER),
+                LocalTime.parse(time, TIME_FORMATTER));
+    }
+
+    public void setCurrentDateTime() {
+        startTime = LocalDateTime::now;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = () -> Duration.ofMinutes(duration);
     }
 
     @Override
