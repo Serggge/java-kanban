@@ -1,6 +1,5 @@
 package service;
 
-import model.Epic;
 import model.Task;
 import java.util.List;
 
@@ -8,29 +7,44 @@ public interface TaskManager {
 
     int addToList(Task task);
 
-    Task getTask(int taskID);
+    Task getTaskById(int id);
 
-    Epic getEpic(int taskID);
+    Task getSubtaskById(int id);
 
-    Task getSubtask(int taskID);
+    Task getEpicById(int id);
 
-    List<Task> getTaskList();
+    List<Task> getTasks();
 
-    List<Task> getEpicTaskList();
+    List<Task> getSubTasks();
 
-    List<Task> getSubtaskList();
+    List<Task> getEpics();
+
+    List<Task> getEpicSubTasks(int id);
 
     List<Task> getAllTasks();
-
-    void deleteTask(int taskID);
-
-    void deleteTasks();
-
-    void deleteEpicTask(int taskID);
-
-    void deleteAllTasks();
 
     List<Task> getHistory();
 
     List<Task> getPrioritizedTasks();
+
+    void deleteTask(int id);
+
+    void deleteSubtask(int id);
+
+    void deleteEpic(int id);
+
+    void deleteTasks();
+
+    void deleteSubTasks();
+
+    void deleteEpics();
+
+    void clear();
+
+    Task getAnyTask(int id);
+
+    List<Task> getTaskListByType(TaskType taskType);
+
+    void deleteTasksByType(TaskType taskType);
+
 }

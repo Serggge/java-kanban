@@ -14,7 +14,7 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     @Override
     public void add(Task task) {
-        int taskID = task.getTaskID();
+        int taskID = task.getId();
         Node newNode = new Node(task);
         if (browsingHistory.containsKey(taskID)) {
             removeNode(browsingHistory.get(taskID));
@@ -30,6 +30,13 @@ public class InMemoryHistoryManager implements HistoryManager {
         }
         removeNode(browsingHistory.get(taskID));
         browsingHistory.remove(taskID);
+    }
+
+    @Override
+    public void clear() {
+        browsingHistory.clear();
+        head = null;
+        tail = null;
     }
 
     @Override

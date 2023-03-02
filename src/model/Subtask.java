@@ -3,20 +3,27 @@ package model;
 public class Subtask extends Task {
 
     private final Epic epicTask;
+    private final int epicId;
 
     public Subtask(Epic epicTask, String taskName, String description) {
         super(taskName, description);
         this.epicTask = epicTask;
+        epicId = epicTask.getId();
     }
 
     public Subtask(Epic epicTask, String taskName, String description, String date, String time, int duration) {
         super(taskName, description, date, time, duration);
         this.epicTask = epicTask;
+        epicId = epicTask.getId();
+    }
+
+    public Epic getEpic() {
+        return epicTask;
     }
 
     @Override
-    public void setTaskID(int taskID) {
-        super.setTaskID(taskID);
+    public void setId(int id) {
+        super.setId(id);
         epicTask.addSubtaskToList(this);
     }
 
@@ -31,12 +38,12 @@ public class Subtask extends Task {
 
     @Override
     public String getStringForSave() {
-        return super.getStringForSave() + epicTask.getTaskID();
+        return super.getStringForSave() + epicTask.getId();
     }
 
     @Override
     public String toString() {
-        return super.toString() + " EpicId=" + epicTask.getTaskID();
+        return super.toString() + " EpicId=" + epicTask.getId();
     }
 
 }

@@ -2,6 +2,7 @@ package service;
 
 import model.*;
 import service.exceptions.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -29,33 +30,33 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
     }
 
     @Override
-    public Task getTask(int taskID) {
-        Task task = super.getTask(taskID);
+    public Task getAnyTask(int id) {
+        Task task = super.getAnyTask(id);
         save();
         return task;
     }
 
     @Override
-    public Epic getEpic(int taskID) {
-        Epic epic = super.getEpic(taskID);
+    public Task getEpicById(int id) {
+        Task epic = super.getEpicById(id);
         save();
         return epic;
     }
 
     @Override
-    public Task getSubtask(int taskID) {
-        Task subtask = super.getSubtask(taskID);
+    public Task getSubtaskById(int id) {
+        Task subtask = super.getSubtaskById(id);
         save();
         return subtask;
     }
 
     @Override
-    public void deleteTask(int taskID) {
-        super.deleteTask(taskID);
+    public void deleteTask(int id) {
+        super.deleteTask(id);
         save();
     }
 
-    private void save() {
+    protected void save() {
         try {
             Files.writeString(path, "id;type;name;status;description;date;time;duration;epic;\n",
                     StandardCharsets.UTF_8, CREATE, TRUNCATE_EXISTING);
@@ -83,8 +84,7 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
             int taskId = Integer.parseInt(params.get(0)
                                                 .orElseThrow());
             TaskType taskType = TaskType.valueOf(params.get(1)
-                                                       .orElseThrow()
-                                                       .toUpperCase());
+                                                       .orElseThrow().toUpperCase());
             String taskName = params.get(2)
                                     .orElseThrow();
             TaskStatus taskStatus = TaskStatus.valueOf(params.get(3)
@@ -114,7 +114,7 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
                     throw new TaskCreateFromFileException(
                             "Непредвиденная ошибка при попытке создать задачу" + " в методе fromString(String value)");
             }
-            task.setTaskID(taskId);
+            task.setId(taskId);
             task.setStatus(taskStatus);
             return task;
         } catch (Exception ex) {
@@ -126,7 +126,7 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
     private static String historyToString(HistoryManager manager) {
         return manager.getHistory()
                       .stream()
-                      .map(task -> String.valueOf(task.getTaskID()))
+                      .map(task -> String.valueOf(task.getId()))
                       .collect(Collectors.joining(";"));
     }
 
@@ -150,7 +150,7 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
                  .lines()
                  .flatMap(line -> Arrays.stream(line.split(";")))
                  .mapToInt(Integer::parseInt)
-                 .forEach(manager::getTask);
+                 .forEach(manager::getAnyTask);
         } catch (IOException ex) {
             throw new ManagerLoadException("Ошибка при загрузке из файла", ex);
         }

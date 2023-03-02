@@ -1,5 +1,7 @@
 package model;
 
+import service.exceptions.TaskNotFoundException;
+
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,7 +35,7 @@ public class Epic extends Task {
 
     }
 
-    public List<Task> getSubtaskList() {
+    public List<Task> getSubtasks() {
         return new ArrayList<>(subtaskList.values());
     }
 
@@ -41,8 +43,8 @@ public class Epic extends Task {
         return new ArrayList<>(subtaskList.keySet());
     }
 
-    public Task getSubtask(int subtaskID) {
-        return subtaskList.get(subtaskID);
+    public Task getSubtask(int id) {
+        return subtaskList.get(id);
     }
 
     public void printSubtaskList() {
@@ -55,12 +57,16 @@ public class Epic extends Task {
         taskStatus = TaskStatus.NEW;
     }
 
-    public void removeSubtaskByID(int taskID) {
-        subtaskList.remove(taskID);
-        if (subtaskList.isEmpty()) {
-            taskStatus = TaskStatus.NEW;
+    public void deleteSubtaskByID(int id) {
+        if (subtaskList.containsKey(id)) {
+            subtaskList.remove(id);
+            if (subtaskList.isEmpty()) {
+                taskStatus = TaskStatus.NEW;
+            } else {
+                changeStatus();
+            }
         } else {
-            changeStatus();
+            throw new TaskNotFoundException("Подзадача не найдена");
         }
     }
 
@@ -75,7 +81,7 @@ public class Epic extends Task {
     }
 
     protected void addSubtaskToList(Subtask subtask) {
-        subtaskList.put(subtask.getTaskID(), subtask);
+        subtaskList.put(subtask.getId(), subtask);
     }
 
     protected void changeStatus() {

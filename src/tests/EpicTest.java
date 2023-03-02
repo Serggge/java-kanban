@@ -18,9 +18,9 @@ class EpicTest {
     public void beforeEach() {
         epic = new Epic("task1", "task2");
         firstSubtask = new Subtask(epic, "First", "First");
-        firstSubtask.setTaskID(1);
+        firstSubtask.setId(1);
         secondSubtask = new Subtask(epic, "Second", "Second");
-        secondSubtask.setTaskID(2);
+        secondSubtask.setId(2);
     }
 
     @AfterEach

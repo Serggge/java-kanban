@@ -33,7 +33,7 @@ class FileBackedTasksManagerTest extends TaskManagerTest<FileBackedTasksManager>
     @Test
     public void testEpicWithoutSubtasks() {
         final int epicId = taskManager.addToList(epic1);
-        final Task expected = taskManager.getTask(epicId);
+        final Task expected = taskManager.getAnyTask(epicId);
         FileBackedTasksManager manager = FileBackedTasksManager.loadFromFile(file);
         List<Task> expectedTaskList = Collections.singletonList(epic1);
 

@@ -22,11 +22,11 @@ class HistoryManagerTest {
     public void beforeEach() {
         historyManager = new InMemoryHistoryManager();
         task1 = new Task("1", "1");
-        task1.setTaskID(1);
+        task1.setId(1);
         task2 = new Task("2", "2");
-        task2.setTaskID(2);
+        task2.setId(2);
         task3 = new Task("3", "3");
-        task3.setTaskID(3);
+        task3.setId(3);
     }
 
     @Test

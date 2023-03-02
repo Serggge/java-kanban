@@ -9,17 +9,19 @@ import java.util.stream.Collectors;
 
 public class InMemoryTaskManager implements TaskManager {
 
-    protected static int nextId;
     protected final Map<Integer, Task> taskList;
-    protected final TreeSet<Task> sortedByPriority;
+    protected final TreeSet<Task> tasksByPriority;
     protected final HistoryManager historyManager;
+    private static int nextId;
 
     public InMemoryTaskManager() {
         taskList = new HashMap<>();
         historyManager = Managers.getDefaultHistory();
-        sortedByPriority = new TreeSet<>((task1, task2) -> {
+        tasksByPriority = new TreeSet<>((task1, task2) -> {
             if (task1.getStartTime() == null) {
                 return 1;
+            } else if (task2.getStartTime() == null) {
+                return -1;
             } else {
                 return task1.getStartTime()
                             .compareTo(task2.getStartTime());
@@ -29,84 +31,71 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public int addToList(Task task) {
-        if (task.getTaskID() == 0) {
-            task.setTaskID(getNextId());
+        if (task.getId() == 0) {
+            task.setId(getNextId());
         }
-        taskList.put(task.getTaskID(), task);
-        if (task.getClass() != Epic.class) {
+        taskList.put(task.getId(), task);
+        if (task.getTaskType() != TaskType.EPIC) {
             checkForIntersections(task);
-            //Добавил в класс TaskManagerTest (в конец) ещё один тест для проверки приоритета:
-            // имя метода checkingCorrectSortingWhenTaskStartTimeChanges()
-            //с закоментированной ниже строкой удаления из трисета тест не проходит, потому оставляю её
-            sortedByPriority.remove(task);
-            sortedByPriority.add(task);
+            tasksByPriority.remove(task);
+            tasksByPriority.add(task);
         }
-        return nextId;
+        return task.getId();
     }
 
     @Override
-    public Task getTask(int taskID) {
-        Task result;
-        if (taskList.containsKey(taskID)) {
-            result = taskList.get(taskID);
-            historyManager.add(result);
+    public Task getTaskById(int id) {
+        Task task = getAnyTask(id);
+        if (task.getTaskType() == TaskType.TASK) {
+            return task;
         } else {
-            result = getSubtask(taskID);
-        }
-        if (result == null) {
             throw new TaskNotFoundException("Задача не найдена");
         }
-        return result;
     }
 
     @Override
-    public Epic getEpic(int taskID) {
-        Epic epic = null;
-        Task task = taskList.get(taskID);
-        if (task instanceof Epic) {
-            epic = (Epic) task;
+    public Task getSubtaskById(int id) {
+        Task task = getAnyTask(id);
+        if (task.getTaskType() == TaskType.SUBTASK) {
+            return task;
+        } else {
+            throw new TaskNotFoundException("Подзадача не найдена");
         }
-        if (epic == null) {
-            throw new TaskNotFoundException("Задача не найдена");
+    }
+
+    @Override
+    public Task getEpicById(int id) {
+        Task task = getAnyTask(id);
+        if (task.getTaskType() == TaskType.EPIC) {
+            return task;
+        } else {
+            throw new TaskNotFoundException("Эпик не найден");
         }
-        historyManager.add(epic);
-        return epic;
     }
 
     @Override
-    public Task getSubtask(int taskID) {
-        for (Task task : getEpicTaskList()) {
-            Epic epicTask = (Epic) task;
-            if (epicTask.getListSubtaskID()
-                        .contains(taskID)) {
-                Task result = epicTask.getSubtask(taskID);
-                historyManager.add(result);
-                return result;
-            }
+    public List<Task> getTasks() {
+        return getTaskListByType(TaskType.TASK);
+    }
+
+    @Override
+    public List<Task> getSubTasks() {
+        return getTaskListByType(TaskType.SUBTASK);
+    }
+
+    @Override
+    public List<Task> getEpics() {
+        return getTaskListByType(TaskType.EPIC);
+    }
+
+    @Override
+    public List<Task> getEpicSubTasks(int id) {
+        if (taskList.containsKey(id) && taskList.get(id) instanceof Epic) {
+            Epic epic = (Epic) taskList.get(id);
+            return epic.getSubtasks();
+        } else {
+            throw new TaskNotFoundException("Эпик не найден");
         }
-        throw new TaskNotFoundException("Задача не найдена.");
-    }
-
-    @Override
-    public List<Task> getTaskList() {
-        return getListByClass(Task.class);
-    }
-
-    @Override
-    public List<Task> getEpicTaskList() {
-        return getListByClass(Epic.class);
-    }
-
-    @Override
-    public List<Task> getSubtaskList() {
-        List<Task> subtaskList = new ArrayList<>();
-        for (Task task : taskList.values()) {
-            if (task.getClass() == Epic.class) {
-                Epic epicTask = (Epic) task;
-                subtaskList.addAll(epicTask.getSubtaskList());
-            }
-        }
-        return subtaskList;
     }
 
     @Override
@@ -118,63 +107,65 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public void deleteTask(int taskID) {
-        if (taskList.containsKey(taskID)) {
-            if (taskList.get(taskID)
-                        .getClass() == Epic.class) {
-                deleteEpicTask(taskID);
-                return;
-            }
-            taskList.remove(taskID);
-            historyManager.remove(taskID);
-            return;
+    public void deleteTask(int id) {
+        if (taskList.containsKey(id) && taskList.get(id)
+                                                .getTaskType() == TaskType.TASK) {
+            tasksByPriority.remove(taskList.get(id));
+            historyManager.remove(id);
+            taskList.remove(id);
         } else {
-            for (Task task : getEpicTaskList()) {
-                Epic epicTask = (Epic) task;
-                if (epicTask.getListSubtaskID()
-                            .contains(taskID)) {
-                    epicTask.removeSubtaskByID(taskID);
-                    historyManager.remove(taskID);
-                    return;
-                }
-            }
+            throw new TaskNotFoundException("Задача не найдена");
         }
-        throw new TaskNotFoundException("Задача не найдена");
     }
 
     @Override
-    public void deleteEpicTask(int taskID) {
-        if (!taskList.containsKey(taskID)) {
-            throw new TaskNotFoundException("Задача не найдена");
-        }
-        Task task = taskList.get(taskID);
-        if (task instanceof Epic) {
-            Epic epic = (Epic) task;
-            for (Task subtask : epic.getSubtaskList()) {
-                historyManager.remove(subtask.getTaskID());
-                taskList.remove(subtask.getTaskID());
+    public void deleteEpic(int id) {
+        if (taskList.containsKey(id) && taskList.get(id) instanceof Epic) {
+            Epic epic = (Epic) taskList.get(id);
+            for (Task task : epic.getSubtasks()) {
+                deleteTask(task.getId());
             }
-            historyManager.remove(taskID);
-            taskList.remove(taskID);
+            historyManager.remove(id);
+            taskList.remove(id);
         } else {
-            throw new TaskNotFoundException("Задача не найдена");
+            throw new TaskNotFoundException("Эпик не найден");
+        }
+    }
+
+    @Override
+    public void deleteSubtask(int id) {
+        if (taskList.containsKey(id) && taskList.get(id) instanceof Subtask) {
+            Subtask subtask = (Subtask) taskList.get(id);
+            subtask.getEpic()
+                   .deleteSubtaskByID(id);
+            tasksByPriority.remove(subtask);
+            historyManager.remove(id);
+            taskList.remove(id);
+        } else {
+            throw new TaskNotFoundException("Подзадача не найдена");
         }
     }
 
     @Override
     public void deleteTasks() {
-        for (Task task : getTaskList()) {
-            historyManager.remove(task.getTaskID());
-            taskList.remove(task.getTaskID());
-        }
+        deleteTasksByType(TaskType.TASK);
     }
 
     @Override
-    public void deleteAllTasks() {
-        deleteTasks();
-        for (Task task : getEpicTaskList()) {
-            deleteEpicTask(task.getTaskID());
-        }
+    public void deleteSubTasks() {
+        deleteTasksByType(TaskType.SUBTASK);
+    }
+
+    @Override
+    public void deleteEpics() {
+        deleteTasksByType(TaskType.EPIC);
+    }
+
+    @Override
+    public void clear() {
+        tasksByPriority.clear();
+        historyManager.clear();
+        taskList.clear();
     }
 
     @Override
@@ -184,33 +175,21 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public List<Task> getPrioritizedTasks() {
-        return new ArrayList<>(sortedByPriority);
-    }
-
-    public void printHistory() {
-        historyManager.getHistory()
-                      .forEach(System.out::println);
+        return new ArrayList<>(tasksByPriority);
     }
 
     protected int getNextId() {
-        return ++nextId;
-    }
-
-    protected List<Task> getListByClass(Class<? extends Task> clazz) {
-        List<Task> typedList = new ArrayList<>();
-        for (Task task : taskList.values()) {
-            if (task.getClass() == clazz) {
-                typedList.add(task);
-            }
+        while (taskList.containsKey(nextId) || nextId == 0) {
+            nextId++;
         }
-        return typedList;
+        return nextId++;
     }
 
     protected void checkForIntersections(Task task) {
         if (task.getStartTime() == null) {
             return;
         }
-        for (Task checkedTask : sortedByPriority) {
+        for (Task checkedTask : tasksByPriority) {
             if (checkedTask.getStartTime() == null) {
                 continue;
             }
@@ -219,22 +198,58 @@ public class InMemoryTaskManager implements TaskManager {
                                                                 .isBefore(checkedTask.getEndTime())) {
                 throw new IntersectionTimeException(String.format(
                         "Созданная задача с имеет пересечение по времени с задачей ID=%d по времени начала",
-                        checkedTask.getTaskID()));
+                        checkedTask.getId()));
             } else if (task.getEndTime()
                            .isAfter(checkedTask.getStartTime()) && task.getEndTime()
                                                                        .isBefore(checkedTask.getEndTime())) {
                 throw new IntersectionTimeException(String.format(
                         "Созданная задача с имеет пересечение по времени с задачей ID=%d по времени завершения",
-                        checkedTask.getTaskID()));
-                //добавил в класс TaskManagerTest (в конец) метод testIntersectionWhenNewTaskConsumesExistingOne()
-                //если убрать этот блок, то исключение не кидается
+                        checkedTask.getId()));
             } else if (task.getStartTime()
                            .isBefore(checkedTask.getStartTime()) && task.getEndTime()
                                                                         .isAfter(checkedTask.getEndTime())) {
                 throw new IntersectionTimeException(String.format(
                         "Созданная задача имеет пересечение по времени с задачей ID=%d по включению в диапазон",
-                        checkedTask.getTaskID()));
+                        checkedTask.getId()));
             }
+        }
+    }
+
+    @Override
+    public Task getAnyTask(int id) {
+        if (taskList.containsKey(id)) {
+            Task task = taskList.get(id);
+            historyManager.add(task);
+            return task;
+        } else {
+            throw new TaskNotFoundException("Задача не найдена");
+        }
+    }
+
+    @Override
+    public List<Task> getTaskListByType(TaskType taskType) {
+        return taskList.values()
+                       .stream()
+                       .filter(task -> task.getTaskType() == taskType)
+                       .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteTasksByType(TaskType taskType) {
+        List<Integer> listId = taskList.values()
+                                       .stream()
+                                       .filter(task -> task.getTaskType() == taskType)
+                                       .map(Task::getId)
+                                       .collect(Collectors.toList());
+        switch (taskType) {
+            case TASK:
+                listId.forEach(this::deleteTask);
+                break;
+            case SUBTASK:
+                listId.forEach(this::deleteSubtask);
+                break;
+            case EPIC:
+                listId.forEach(this::deleteEpic);
         }
     }
 

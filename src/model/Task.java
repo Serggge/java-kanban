@@ -1,5 +1,7 @@
 package model;
 
+import service.TaskType;
+
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -10,6 +12,7 @@ public class Task implements Comparable<Task> {
     protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     protected static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     protected static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+    private final TaskType TASK_TYPE;
     protected String taskName;
     protected String description;
     protected int taskID;
@@ -21,6 +24,9 @@ public class Task implements Comparable<Task> {
         this.taskName = taskName;
         this.description = description;
         this.taskStatus = TaskStatus.NEW;
+        TASK_TYPE = TaskType.valueOf(this.getClass()
+                                         .getSimpleName()
+                                         .toUpperCase());
     }
 
     public Task(String taskName, String description, String date, String time, int duration) {
@@ -29,6 +35,17 @@ public class Task implements Comparable<Task> {
         setDuration(duration);
     }
 
+    public String getTaskName() {
+        return taskName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public TaskType getTaskType() {
+        return TASK_TYPE;
+    }
 
     public LocalDateTime getStartTime() {
         return startTime != null ? startTime.get() : null;
@@ -43,13 +60,13 @@ public class Task implements Comparable<Task> {
         return duration != null ? duration.get() : null;
     }
 
-    public int getTaskID() {
+    public int getId() {
         return taskID;
     }
 
-    public void setTaskID(int taskID) {
-        if (this.taskID == 0 && taskID > 0) {
-            this.taskID = taskID;
+    public void setId(int id) {
+        if (this.taskID == 0 && id > 0) {
+            this.taskID = id;
         }
     }
 
@@ -62,7 +79,8 @@ public class Task implements Comparable<Task> {
     }
 
     public String getDateTime() {
-        return startTime.get() != null ? startTime.get().format(DATE_TIME_FORMATTER) : "none";
+        return startTime.get() != null ? startTime.get()
+                                                  .format(DATE_TIME_FORMATTER) : "none";
     }
 
     public void setDateTime(String date, String time) {
@@ -95,7 +113,7 @@ public class Task implements Comparable<Task> {
         StringBuilder sb = new StringBuilder();
         sb.append(taskID)
           .append(";")
-          .append(getClass().getSimpleName())
+          .append(TASK_TYPE)
           .append(";")
           .append(taskName)
           .append(";")
@@ -129,8 +147,8 @@ public class Task implements Comparable<Task> {
                                                                       .format(DATE_TIME_FORMATTER);
         String duration = this.getDuration() == null ? "none" : String.valueOf(this.getDuration()
                                                                                    .toMinutes());
-        return String.format("ID=%d Name:%s Description:%s Type:%s Status:%s Start:%s Duration_in_minutes:%s", taskID,
-                taskName, description, getClass().getSimpleName(), taskStatus, startTime, duration);
+        return String.format("Type:%s ID=%d Name:%s Description:%s Status:%s Start:%s Duration_in_minutes:%s",
+                TASK_TYPE, taskID, taskName, description, taskStatus, startTime, duration);
     }
 
     @Override

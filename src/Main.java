@@ -1,36 +1,17 @@
-import model.*;
-import service.InMemoryTaskManager;
-import service.Managers;
-import service.TaskManager;
-import java.util.Random;
+import net.HttpTaskServer;
+import net.KVServer;
+import net.KVTaskClient;
+
+import java.io.IOException;
 
 public class Main {
 
-    public static TaskManager taskManager = Managers.getDefault();
+    public static void main(String[] args) throws IOException, InterruptedException {
 
-    public static void main(String[] args) {
-
-    }
-
-    public static void fillHistory() {
-        taskManager.getEpic(3);
-        taskManager.getTask(1);
-        taskManager.getTask(2);
-        taskManager.getEpic(6);
-        taskManager.getSubtask(4);
-        taskManager.getSubtask(5);
-    }
-
-    public static void getRandomTask() {
-        Random random = new Random();
-        int index = random.nextInt(6) + 1;
-        System.out.println("Запрошена задача с ID = " + index);
-        taskManager.getTask(index);
-    }
-
-    public static void browseHistory() {
-        InMemoryTaskManager itm = (InMemoryTaskManager) taskManager;
-        itm.printHistory();
+        new KVServer().start();
+        new HttpTaskServer().start();
+/*        KVTaskClient client = new KVTaskClient("http://localhost:8078");
+        System.out.println(client.getApiToken());*/
     }
 
 }
