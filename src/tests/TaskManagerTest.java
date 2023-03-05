@@ -6,7 +6,6 @@ import model.Epic;
 import model.Subtask;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import service.TaskType;
 import service.exceptions.IntersectionTimeException;
 import java.util.Collections;
 import java.util.List;
@@ -40,8 +39,8 @@ abstract class TaskManagerTest<T extends TaskManager> {
 
     @Test
     public void testAddToList() {
-        final int taskId = taskManager.addToList(task1);
-        final Task savedTask = taskManager.getAnyTask(taskId);
+        final int id = taskManager.addToList(task1);
+        final Task savedTask = taskManager.getTaskById(id);
         final List<Task> tasks = taskManager.getAllTasks();
 
         assertNotNull(savedTask, "Задача не найдена.");
@@ -53,8 +52,8 @@ abstract class TaskManagerTest<T extends TaskManager> {
 
     @Test
     public void testGetTaskById() {
-        final int taskId = taskManager.addToList(task1);
-        final Task savedTask = taskManager.getAnyTask(taskId);
+        final int id = taskManager.addToList(task1);
+        final Task savedTask = taskManager.getTaskById(id);
         final List<Task> tasks = taskManager.getAllTasks();
 
         assertNotNull(savedTask, "Задача не найдена.");
@@ -66,8 +65,8 @@ abstract class TaskManagerTest<T extends TaskManager> {
 
     @Test
     public void testGetEpicById() {
-        final int taskId = taskManager.addToList(epic1);
-        final Task savedTask = taskManager.getAnyTask(taskId);
+        final int id = taskManager.addToList(epic1);
+        final Task savedTask = taskManager.getEpicById(id);
         final List<Task> tasks = taskManager.getAllTasks();
 
         assertNotNull(savedTask, "Задача не найдена.");
@@ -81,7 +80,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
     public void testGetSubtaskById() {
         final int epicId = taskManager.addToList(epic1);
         final int subtaskId = taskManager.addToList(subtask1_epic1);
-        final Task savedTask = taskManager.getAnyTask(subtaskId);
+        final Task savedTask = taskManager.getSubtaskById(subtaskId);
         final List<Task> tasks = taskManager.getAllTasks();
 
         assertNotNull(savedTask, "Задача не найдена.");
@@ -96,7 +95,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
         final int epicId = taskManager.addToList(epic1);
         final int firstSubtaskId = taskManager.addToList(subtask1_epic1);
         final int secondSubtaskId = taskManager.addToList(subtask2_epic1);
-        final Task savedTask = taskManager.getAnyTask(epicId);
+        final Task savedTask = taskManager.getEpicById(epicId);
         final List<Task> tasks = taskManager.getAllTasks();
         final List<Task> expectedTasks = List.of(epic1, subtask1_epic1, subtask2_epic1);
 
@@ -112,8 +111,8 @@ abstract class TaskManagerTest<T extends TaskManager> {
     public void testGetEpicTaskList() {
         final int epicId = taskManager.addToList(epic1);
         final int epicId2 = taskManager.addToList(epic2);
-        final Task savedEpic = taskManager.getAnyTask(epicId);
-        List<Task> epics = taskManager.getTaskListByType(TaskType.EPIC);
+        final Task savedEpic = taskManager.getEpicById(epicId);
+        List<Task> epics = taskManager.getEpics();
         List<Task> expectedEpicList = List.of(epic1, epic2);
 
         assertNotNull(savedEpic, "Задача не найдена.");
@@ -129,15 +128,14 @@ abstract class TaskManagerTest<T extends TaskManager> {
         final int epicId = taskManager.addToList(epic1);
         final int firstSubtaskId = taskManager.addToList(subtask1_epic1);
         final int secondSubtaskId = taskManager.addToList(subtask2_epic1);
-        final Task savedSubtask = taskManager.getAnyTask(firstSubtaskId);
-        List<Task> subtaskList = taskManager.getTaskListByType(TaskType.SUBTASK);
-        List<Task> expectedSubtasks = List.of(subtask1_epic1, subtask2_epic1);
+        final Task savedSubtask = taskManager.getSubtaskById(firstSubtaskId);
+        List<Task> subtaskList = taskManager.getSubTasks();
+        List<Task> expectedSubtasks = taskManager.getSubTasks();
 
         assertNotNull(savedSubtask, "Задача не найдена.");
         assertNotNull(subtaskList, "Задачи на возвращаются.");
         assertEquals(subtask1_epic1, savedSubtask, "Задачи не совпадают.");
         assertEquals(expectedSubtasks, subtaskList, "Задачи не совпадают.");
-        assertEquals(List.of(subtask1_epic1, subtask2_epic1), subtaskList, "Задачи не совпадают.");
         assertEquals(2, subtaskList.size(), "Неверное количество задач.");
     }
 
@@ -145,7 +143,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
     public void testDeleteTaskById() {
         final int firstTaskId = taskManager.addToList(task1);
         final int secondTaskId = taskManager.addToList(task2);
-        final Task savedTask = taskManager.getAnyTask(firstTaskId);
+        final Task savedTask = taskManager.getTaskById(firstTaskId);
         final List<Task> tasks = taskManager.getAllTasks();
 
         assertNotNull(savedTask, "Задача не найдена.");
@@ -167,8 +165,8 @@ abstract class TaskManagerTest<T extends TaskManager> {
         final int firstTaskId = taskManager.addToList(task1);
         final int secondTaskId = taskManager.addToList(task2);
         final int epicId = taskManager.addToList(epic1);
-        final Task savedEpic = taskManager.getAnyTask(epicId);
-        taskManager.deleteTasksByType(TaskType.TASK);
+        final Task savedEpic = taskManager.getEpicById(epicId);
+        taskManager.deleteTasks();
         final List<Task> tasks = taskManager.getAllTasks();
         final List<Task> expectedEpic = List.of(savedEpic);
 
@@ -184,20 +182,20 @@ abstract class TaskManagerTest<T extends TaskManager> {
     public void testDeleteEpicById() {
         final int epicId = taskManager.addToList(epic1);
         final int subtaskId = taskManager.addToList(subtask1_epic1);
-        final Task savedEpic = taskManager.getAnyTask(epicId);
+        final Task savedEpic = taskManager.getEpicById(epicId);
         final List<Task> tasks = taskManager.getAllTasks();
-        final List<Task> expectedEpic = List.of(epic1, subtask1_epic1);
+        final List<Task> expectedList = List.of(epic1, subtask1_epic1);
 
         assertNotNull(savedEpic, "Задача не найдена.");
         assertNotNull(tasks, "Задачи на возвращаются.");
         assertEquals(epic1, savedEpic, "Задачи не совпадают.");
-        assertEquals(expectedEpic, tasks, "Задачи не совпадают.");
+        assertEquals(expectedList, tasks, "Задачи не совпадают.");
         assertEquals(savedEpic, tasks.get(0), "Задачи не совпадают.");
         assertEquals(2, tasks.size(), "Неверное количество задач.");
 
         taskManager.deleteEpic(epicId);
-        final List<Task> expected = Collections.emptyList();
-        assertEquals(expected, taskManager.getAllTasks());
+        final List<Task> expectedEpicList = Collections.emptyList();
+        assertEquals(expectedEpicList, taskManager.getAllTasks());
     }
 
     @Test
@@ -219,7 +217,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
         final int earlyTaskId = taskManager.addToList(earlyStartTask);
         final int lateTaskId = taskManager.addToList(lateStartTask);
         final List<Task> priorityBeforeChange = taskManager.getPrioritizedTasks();
-        Task expectedTask = taskManager.getAnyTask(earlyTaskId);
+        Task expectedTask = taskManager.getTaskById(earlyTaskId);
         String taskDateTime = expectedTask.getDateTime();
 
         assertEquals("01.01.1990 12:00", taskDateTime , "Время задач не совпадает");
@@ -228,7 +226,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
         earlyStartTask.setCurrentDateTime();
         taskManager.addToList(earlyStartTask);
         final List<Task> priorityAfterChange = taskManager.getPrioritizedTasks();
-        expectedTask = taskManager.getAnyTask(lateTaskId);
+        expectedTask = taskManager.getTaskById(lateTaskId);
         taskDateTime = expectedTask.getDateTime();
         assertEquals("01.01.2010 12:00", taskDateTime, "Время задач не совпадает");
         assertEquals(expectedTask, priorityAfterChange.get(0), "Приоритет по времени определён неверно");

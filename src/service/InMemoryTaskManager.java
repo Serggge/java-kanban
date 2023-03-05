@@ -46,7 +46,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public Task getTaskById(int id) {
         Task task = getAnyTask(id);
-        if (task.getTaskType() == TaskType.TASK) {
+        if (task != null && task.getTaskType() == TaskType.TASK) {
             return task;
         } else {
             throw new TaskNotFoundException("Задача не найдена");
@@ -56,7 +56,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public Task getSubtaskById(int id) {
         Task task = getAnyTask(id);
-        if (task.getTaskType() == TaskType.SUBTASK) {
+        if (task != null && task.getTaskType() == TaskType.SUBTASK) {
             return task;
         } else {
             throw new TaskNotFoundException("Подзадача не найдена");
@@ -66,7 +66,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public Task getEpicById(int id) {
         Task task = getAnyTask(id);
-        if (task.getTaskType() == TaskType.EPIC) {
+        if (task != null && task.getTaskType() == TaskType.EPIC) {
             return task;
         } else {
             throw new TaskNotFoundException("Эпик не найден");
@@ -123,7 +123,7 @@ public class InMemoryTaskManager implements TaskManager {
         if (taskList.containsKey(id) && taskList.get(id) instanceof Epic) {
             Epic epic = (Epic) taskList.get(id);
             for (Task task : epic.getSubtasks()) {
-                deleteTask(task.getId());
+                deleteSubtask(task.getId());
             }
             historyManager.remove(id);
             taskList.remove(id);
@@ -215,27 +215,26 @@ public class InMemoryTaskManager implements TaskManager {
         }
     }
 
-    @Override
-    public Task getAnyTask(int id) {
+
+    protected Task getAnyTask(int id) {
         if (taskList.containsKey(id)) {
             Task task = taskList.get(id);
             historyManager.add(task);
             return task;
         } else {
-            throw new TaskNotFoundException("Задача не найдена");
+            return null;
         }
     }
 
-    @Override
-    public List<Task> getTaskListByType(TaskType taskType) {
+
+    private List<Task> getTaskListByType(TaskType taskType) {
         return taskList.values()
                        .stream()
                        .filter(task -> task.getTaskType() == taskType)
                        .collect(Collectors.toList());
     }
 
-    @Override
-    public void deleteTasksByType(TaskType taskType) {
+    private void deleteTasksByType(TaskType taskType) {
         List<Integer> listId = taskList.values()
                                        .stream()
                                        .filter(task -> task.getTaskType() == taskType)
@@ -251,6 +250,11 @@ public class InMemoryTaskManager implements TaskManager {
             case EPIC:
                 listId.forEach(this::deleteEpic);
         }
+    }
+
+    public void deleteAllWithoutSave() {
+        taskList.clear();
+        historyManager.clear();
     }
 
 }

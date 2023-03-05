@@ -7,7 +7,7 @@ public final class Managers {
     private Managers() {}
 
     public static TaskManager getDefault() {
-        return new HttpTaskManager("https://localhost:8078");
+        return new HttpTaskManager("http://localhost:8078");
     }
 
     static HistoryManager getDefaultHistory() {

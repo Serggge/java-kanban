@@ -2,6 +2,8 @@ package service;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import model.Epic;
+import model.Subtask;
 import model.Task;
 import net.KVTaskClient;
 import net.util.CustomGson;
@@ -10,21 +12,21 @@ import service.exceptions.HttpServerException;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.TreeSet;
 
 public class HttpTaskManager extends FileBackedTasksManager {
 
     private static final File FILE = new File("src/resources/backup.csv");
-    private KVTaskClient client;
-    private final Gson gson;
+    private final String url;
+    private static KVTaskClient client;
+    private final Gson gson = CustomGson.getGson();
 
     public HttpTaskManager(String url) {
         super(FILE);
-        gson = CustomGson.getGson();
+        this.url = url;
         try {
-            client = new KVTaskClient(url);
-            loadFromServer();
-        } catch (HttpServerException | IOException | InterruptedException e) {
+            createClient(url);
+            loadFromServer(url);
+        } catch (HttpServerException e) {
             TaskManager taskManager = loadFromFile(FILE);
             taskManager.getAllTasks()
                        .forEach(this::addToList);
@@ -36,30 +38,57 @@ public class HttpTaskManager extends FileBackedTasksManager {
     @Override
     protected void save() {
         super.save();
-        String taskListJson = gson.toJson(taskList.values(), new TypeToken<List<Task>>() {
-        }.getType());
-        String historyJson = gson.toJson(historyManager.getHistory(), new TypeToken<List<Task>>() {
-        }.getType());
-        try {
-            client.put("Tasks", taskListJson);
-            client.put("History", historyJson);
-        } catch (IOException | InterruptedException e) {
-            throw new HttpServerException("Ошибка при сериализации на KVServer", e);
+        if (client == null) {
+            createClient(url);
+        } else {
+            try {
+                String taskListJson = gson.toJson(getTasks(), new TypeToken<List<Task>>() {
+                }.getType());
+                String subTaskListJson = gson.toJson(getSubTasks(), new TypeToken<List<Subtask>>() {
+                }.getType());
+                String epicListJson = gson.toJson(getEpics(), new TypeToken<List<Subtask>>() {
+                }.getType());
+                String historyJson = gson.toJson(historyManager.getHistory(), new TypeToken<List<Epic>>() {
+                }.getType());
+                client.put("Tasks", taskListJson);
+                client.put("Subtasks", subTaskListJson);
+                client.put("Epics", epicListJson);
+                client.put("History", historyJson);
+            } catch (IOException | InterruptedException e) {
+                throw new HttpServerException("Ошибка при сериализации на KVServer", e);
+            }
         }
     }
 
-    public void loadFromServer() {
+    public void loadFromServer(String url) {
         try {
             String tasksJson = client.load("Tasks");
+            String subTasksJson = client.load("Subtasks");
+            String epicsJson = client.load("Epics");
             String historyJson = client.load("History");
-            List<Task> taskList = gson.fromJson(tasksJson, new TypeToken<TreeSet<Task>>() {
+            List<Task> taskList = gson.fromJson(tasksJson, new TypeToken<List<Task>>() {
             }.getType());
-            List<Task> history = gson.fromJson(historyJson, new TypeToken<TreeSet<Task>>() {
+            List<Task> subTaskList = gson.fromJson(subTasksJson, new TypeToken<List<Subtask>>() {
             }.getType());
-            taskList.forEach(this::addToList);
-            history.forEach(historyManager::add);
+            List<Task> epicList = gson.fromJson(epicsJson, new TypeToken<List<Epic>>() {
+            }.getType());
+            List<Task> history = gson.fromJson(historyJson, new TypeToken<List<Task>>() {
+            }.getType());
+            if (taskList == null) {
+                throw new HttpServerException("Не удалось восстановить задачи из KVServer");
+            } else {
+                taskList.forEach(this::addToList);
+                epicList.forEach(this::addToList);
+                subTaskList.forEach(this::addToList);
+                history.forEach(task -> getAnyTask(task.getId()));
+            }
         } catch (IOException | InterruptedException e) {
-            throw new HttpServerException("Ошибка при десериализации на KVServer", e);
+            throw new HttpServerException("Ошибка при подключении к KVServer", e);
         }
     }
+
+    private void createClient(String url) {
+        client = new KVTaskClient(url);
+    }
+
 }

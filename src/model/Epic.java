@@ -11,8 +11,8 @@ import java.util.function.Supplier;
 
 public class Epic extends Task {
 
-    private final Map<Integer, Subtask> subtaskList;
-    private final Supplier<LocalDateTime> endTime;
+    private final Map<Integer, Task> subtaskList;
+    private final transient Supplier<LocalDateTime> endTime;
 
     public Epic(String taskName, String description) {
         super(taskName, description, LocalDate.now()
@@ -87,7 +87,7 @@ public class Epic extends Task {
     protected void changeStatus() {
         boolean isFirstTask = true;
         TaskStatus firstSubtaskStatus = null;
-        for (Subtask subtask : subtaskList.values()) {
+        for (Task subtask : subtaskList.values()) {
             if (subtask.getTaskStatus() == TaskStatus.IN_PROGRESS) {
                 taskStatus = TaskStatus.IN_PROGRESS;
                 return;

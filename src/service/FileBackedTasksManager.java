@@ -25,35 +25,106 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
     @Override
     public int addToList(Task task) {
         int id = super.addToList(task);
-        save();
+        this.save();
         return id;
     }
 
     @Override
-    public Task getAnyTask(int id) {
-        Task task = super.getAnyTask(id);
-        save();
+    public Task getTaskById(int id) {
+        Task task = super.getTaskById(id);
+        this.save();
+        return task;
+    }
+
+    @Override
+    public Task getSubtaskById(int id) {
+        Task task = super.getSubtaskById(id);
+        this.save();
         return task;
     }
 
     @Override
     public Task getEpicById(int id) {
-        Task epic = super.getEpicById(id);
-        save();
-        return epic;
+        Task task = super.getEpicById(id);
+        this.save();
+        return task;
     }
 
     @Override
-    public Task getSubtaskById(int id) {
-        Task subtask = super.getSubtaskById(id);
-        save();
-        return subtask;
+    public List<Task> getEpicSubTasks(int id) {
+        List<Task> subTasks = super.getEpicSubTasks(id);
+        this.save();
+        return subTasks;
     }
 
     @Override
     public void deleteTask(int id) {
         super.deleteTask(id);
-        save();
+        this.save();
+    }
+
+    @Override
+    public void deleteEpic(int id) {
+        super.deleteEpic(id);
+        this.save();
+    }
+
+    @Override
+    public void deleteSubtask(int id) {
+        super.deleteSubtask(id);
+        this.save();
+    }
+
+    @Override
+    public void deleteTasks() {
+        super.deleteTasks();
+        this.save();
+    }
+
+    @Override
+    public void deleteSubTasks() {
+        super.deleteSubTasks();
+        this.save();
+    }
+
+    @Override
+    public void deleteEpics() {
+        super.deleteEpics();
+        this.save();
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        this.save();
+    }
+
+    public static TaskManager loadFromFile(File file) {
+        FileBackedTasksManager manager = new FileBackedTasksManager(file);
+        try (Stream<String> stream = Files.lines(file.toPath())) {
+            List<String> tasks = stream.skip(1)
+                                       .collect(Collectors.toList());
+            if (tasks.isEmpty()) {
+                return manager;
+            } else {
+                tasks.stream()
+                     .takeWhile(line -> !line.isBlank())
+                     .map(manager::fromString)
+                     .forEach(manager::addToList);
+            }
+            String historyString = tasks.get(tasks.size() - 1);
+            if (historyString.isEmpty()) {
+                return manager;
+            } else {
+                historyString.lines()
+                             .flatMap(line -> Arrays.stream(line.split(";")))
+                             .mapToInt(Integer::parseInt)
+                             .forEach(manager::getAnyTask);
+            }
+        } catch (IOException ex) {
+            throw new ManagerLoadException("Ошибка при загрузке из файла", ex);
+        }
+        return manager;
     }
 
     protected void save() {
@@ -84,7 +155,8 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
             int taskId = Integer.parseInt(params.get(0)
                                                 .orElseThrow());
             TaskType taskType = TaskType.valueOf(params.get(1)
-                                                       .orElseThrow().toUpperCase());
+                                                       .orElseThrow()
+                                                       .toUpperCase());
             String taskName = params.get(2)
                                     .orElseThrow();
             TaskStatus taskStatus = TaskStatus.valueOf(params.get(3)
@@ -128,33 +200,6 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
                       .stream()
                       .map(task -> String.valueOf(task.getId()))
                       .collect(Collectors.joining(";"));
-    }
-
-    private static List<Integer> historyFromString(String value) {
-        return value.lines()
-                    .flatMap(line -> Arrays.stream(line.split(";")))
-                    .map(Integer::valueOf)
-                    .collect(Collectors.toList());
-    }
-
-    public static FileBackedTasksManager loadFromFile(File file) {
-        FileBackedTasksManager manager = new FileBackedTasksManager(file);
-        try (Stream<String> stream = Files.lines(file.toPath())) {
-            List<String> tasks = stream.skip(1)
-                                       .collect(Collectors.toList());
-            tasks.stream()
-                 .takeWhile(line -> !line.isBlank())
-                 .map(manager::fromString)
-                 .forEach(manager::addToList);
-            tasks.get(tasks.size() - 1)
-                 .lines()
-                 .flatMap(line -> Arrays.stream(line.split(";")))
-                 .mapToInt(Integer::parseInt)
-                 .forEach(manager::getAnyTask);
-        } catch (IOException ex) {
-            throw new ManagerLoadException("Ошибка при загрузке из файла", ex);
-        }
-        return manager;
     }
 
 }

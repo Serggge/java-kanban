@@ -1,6 +1,6 @@
-package net.util;
+package net.endpoints;
 
-public enum Endpoint {
+public enum EndpointTasks {
 
     ADD_TASK,
     GET_TASK_BY_ID,

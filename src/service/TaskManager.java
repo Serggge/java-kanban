@@ -41,10 +41,4 @@ public interface TaskManager {
 
     void clear();
 
-    Task getAnyTask(int id);
-
-    List<Task> getTaskListByType(TaskType taskType);
-
-    void deleteTasksByType(TaskType taskType);
-
 }

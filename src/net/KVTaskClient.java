@@ -1,5 +1,7 @@
 package net;
 
+import service.exceptions.HttpServerException;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -14,7 +16,7 @@ public class KVTaskClient {
     private final HttpClient client;
     private final String apiToken;
 
-    public KVTaskClient(String url) throws IOException, InterruptedException {
+    public KVTaskClient(String url) {
         this.url = url;
         client = HttpClient.newHttpClient();
         URI uri = URI.create(url + "/register");
@@ -22,12 +24,12 @@ public class KVTaskClient {
                                          .uri(uri)
                                          .GET()
                                          .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        apiToken = response.body();
-    }
-
-    public String getApiToken() {
-        return apiToken;
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            apiToken = response.body();
+        } catch (IOException | InterruptedException e) {
+            throw new HttpServerException("Ошибка при подключении к KVServer", e);
+        }
     }
 
     public void put(String key, String json) throws IOException, InterruptedException {

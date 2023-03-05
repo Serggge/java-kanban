@@ -4,6 +4,8 @@ import model.Task;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import service.FileBackedTasksManager;
+import service.TaskManager;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,15 +28,15 @@ class FileBackedTasksManagerTest extends TaskManagerTest<FileBackedTasksManager>
         final int taskId = taskManager.addToList(task1);
 
         taskManager.deleteTask(taskId);
-        FileBackedTasksManager manager = FileBackedTasksManager.loadFromFile(file);
+        TaskManager manager = FileBackedTasksManager.loadFromFile(file);
         assertEquals(new ArrayList<Task>(), manager.getAllTasks());
     }
 
     @Test
     public void testEpicWithoutSubtasks() {
         final int epicId = taskManager.addToList(epic1);
-        final Task expected = taskManager.getAnyTask(epicId);
-        FileBackedTasksManager manager = FileBackedTasksManager.loadFromFile(file);
+        final Task expected = taskManager.getEpicById(epicId);
+        TaskManager manager = FileBackedTasksManager.loadFromFile(file);
         List<Task> expectedTaskList = Collections.singletonList(epic1);
 
         assertEquals(expectedTaskList, manager.getAllTasks());
@@ -45,7 +47,7 @@ class FileBackedTasksManagerTest extends TaskManagerTest<FileBackedTasksManager>
     public void testEmptyHistory() {
         taskManager.addToList(epic1);
         taskManager.addToList(epic2);
-        FileBackedTasksManager manager = FileBackedTasksManager.loadFromFile(file);
+        TaskManager manager = FileBackedTasksManager.loadFromFile(file);
 
         assertEquals(new ArrayList<Task>(), manager.getHistory());
     }
